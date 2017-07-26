@@ -1,0 +1,122 @@
+.PHONY: all biuld-all build-app repo-warning-in clean-app clean vet clean-all lint test-all view-all-coverage
+#
+# This is the Makefile to build the golang components.
+# It is normally run in a docker container for golang builds.
+#
+# 6/30/2016 mln
+#
+# golog compile via docker container:
+# https://hub.docker.com/_/golang/
+#
+# Vars for version and build
+VERSION ?= 0.0.1
+BUILD=`git rev-parse HEAD`
+#
+# # -ldflasg to set vars
+LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.Build=${BUILD}"
+#
+#
+IMAGE_NAME := exampleapp
+
+#
+# avoid checking etc the vendor dir
+#
+NOVENDOR := $(shell glide novendor)
+PKGS := "./cmd ./apkg"
+#
+# find the certs.  use the first location found
+#
+CONTAINER_PATH := ./_containerize
+CERTS_NAME := ca-certificates.crt
+CERTS_LOC := $(shell find / -name "$(CERTS_NAME)" -print -quit 2>/dev/null)
+CERTS_DEST := $(CONTAINER_PATH)/$(CERTS_NAME)
+
+repo-warning-in:
+	@echo "============================================================="
+	@echo "make setup:$(MAKE):$(MAKECMDGOALS):$(MAKEFLAGS):"
+	@echo "GOPATH:$(GOPATH)"
+	@echo "GOROOT:$(GOROOT)"
+	@echo "GOBIN:$(GOBIN)"
+	@echo "CERTS_LOC:$(CERTS_LOC)"
+	@echo "============================================================="
+	@pwd
+	@ls -l
+	@df
+	@ls -l $(GOPATH)
+	@env | sort
+
+all:  test
+
+build-all: build-app  build-darwin
+
+#------------------------------------------
+# Target for real container build
+#
+build-app: repo-warning-in  $(CONTAINER_PATH)/$(IMAGE_NAME)-linux $(CERTS_DEST)
+	
+$(CONTAINER_PATH)/$(DOCKER_IAMGE)-linux: vet main.go
+	env CGO_ENABLED=0 GOOS=linux go build -v $(LDFLAGS) -o $@ main.go
+
+$(CERTS_DEST):
+	cp $(CERTS_LOC) $(CERTS_DEST)
+#
+#------------------------------------------
+#
+# for local os-x app run only
+#
+build-darwin: repo-warning-in vet
+	env GOOS=darwin GOARCH=amd64 go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-darwin-amd64 main.go
+
+#
+# dev testing
+#
+test: vet lint
+	go test -cover -v $(LDFLAGS) $(NOVENDOR)
+
+test-all: test-apkg test-cmd
+
+test-apkg: repo-warning-in vet lint
+	go test -race -v $(LDFLAGS) ./apkg/...
+
+test-cmd: repo-warning-in vet lint
+	go test -race -v $(LDFLAGS) ./cmd/...
+
+cover-runner: repo-warning-in
+	go test -covermode=count -coverprofile=coverage.out ./apkg
+	go tool cover -html=coverage.out -o=coverage.html
+
+view-debug:
+	echo "PKGS $(PKGS)"
+
+view-all-coverage:
+	echo "mode: count" > coverage-all.out
+	$(foreach pkg, $(PKGS),\
+	echo "pkg $(pkg)";\
+	go test -covermode=count -coverprofile=coverage.out $(pkg);\
+	tail -n +2 coverage.out >> coverage-all.out;)
+	go tool cover -html=coverage-all.out -o=coverage-all.html
+
+vet:
+	go vet $(NOVENDOR)
+
+doc:
+	godoc ./apkg
+	godoc ./cmd
+	#godoc -http=:6060 -index
+
+lint:
+	go get github.com/golang/lint/golint
+	go get honnef.co/go/simple/cmd/gosimple
+	golint $(NOVENDOR)
+	gosimple $(NOVENDOR)
+
+
+clean: clean-all
+
+clean-all: clean-app 
+
+clean-app:
+	-rm $(GOPATH)/bin/$(IMAGE_NAME)
+	-rm $(GOPATH)/bin/$(IMAGE_NAME)-linux
+	-rm $(GOPATH)/bin/$(IMAE_NAME)-darwin-amd64
+

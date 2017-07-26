@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    labels:
+        name: example-demo
+    name: example-demo
+spec:
+    restartPolicy: Never
+    containers:
+      - name: example-demo
+        image: quay.io/mikeln/example-img:0.0.3
+        command:
+          - ./example-img
+          - kubernetes
+          - version
+          - --verbose
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        volumeMounts:
+          - name: kubectl
+            mountPath: /opt/bin/kubectl
+          - name: kubesrv
+            mountPath: /srv/kubernetes
+    volumes:
+      - name: kubectl
+        hostPath: 
+          path: /opt/bin/kubectl
+      - name: kubesrv
+        hostPath: 
+          path: /srv/kubernetes
