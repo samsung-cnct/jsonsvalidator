@@ -25,13 +25,11 @@ var schemaDir string
 // withCmd represents the with command
 var withCmd = &cobra.Command{
 	Use:     "with",
-	Example: "with [-d /path/to/schemas] [-s schema1.json -s schemaN.json -s ...]",
+	Example: "with <filename(s),director(y|ies)>",
 	Short:   "prepratory argument to specify schema(s) against which to validate.",
 	Long: `Use the <with> argument to specify the schema file(s) to validate your
 config against.`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return CheckRequiredFlags(cmd.Flags())
-	},
+	//Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("with called")
 	},
@@ -39,7 +37,5 @@ config against.`,
 
 func init() {
 	validateCmd.AddCommand(withCmd)
-	validateCmd.PersistentFlags().StringArrayVarP(&schemas, "schemas", "s", nil, "schema(s) to use for validation.")
-	validateCmd.PersistentFlags().StringVarP(&schemaDir, "schema-dir", "d", "", "directory where schemas to use for validation reside.")
 	fmt.Println("got here 2")
 }

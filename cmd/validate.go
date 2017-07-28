@@ -16,40 +16,64 @@ package cmd
 import (
 	"fmt"
 
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
-// validateCmd represents the validate command
+/*
+// FileExists check if a file exists on the system
+func FileExists(name string) bool {
+    if _, err := os.Stat(name); err != nil {
+    if os.IsNotExist(err) {
+                return false
+            }
+    }
+    return true
+}
+
+func validArgs(cmd *cobra.Command, args []string) error {
+	if err := cli.RequiresMinArgs(1)(cmd, args); err != nil {
+		return err
+	}
+
+    return FileExists(args[0])
+    },
+*/
+
+// place holder for the configFile
 var configFile string
+
+// validateCmd represents the validate command
 var validateCmd = &cobra.Command{
-	Use:     "validate",
-	Short:   "Set config file to be validated.",
-	Example: "validate -c <instance/config file>",
-	Long: `"validate" is the prepratory argyument which requires the ` +
-		`'-c <config>' flag to specify the file that needs to be ` +
-		`validated via JSON schema. Remember, this is ` +
+	Use:   "validate",
+	Short: "Set config file to be validated.",
+	Long: `Use "validate" to specify the file that needs to be ` +
+		`validated via a JSON schema. Remember, this is ` +
 		`THE CONFIG THAT NEEDS TO BE VALIDATED.`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("inside pre-run")
-		return CheckRequiredFlags(cmd.Flags())
-	},
+	Example: "validate  <instance/config file>",
+	// the following causes Run to never get hit if
+	// it succeeds. So the following erroneous invocation
+	// fails: ./jsonvalidator validate with
+	// however, ./jsonvalidation validate successfully fails.
+	//Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 0 {
-			fmt.Println("-c <config> is required. No other arguments are recognized.")
-		}
+		fmt.Println("TEST")
+		fmt.Printf("args are %v\n", args)
 
 		if len(args) == 0 {
-			fmt.Println("-c <config> is required")
-			cmd.Usage()
+			os.Stderr.WriteString("'validate' requires one argument\n")
+			os.Exit(-1)
 		}
 
-		fmt.Printf("got here. args are %v with length %d: \n", args, len(args))
+		if args[1] == "with" {
+			fmt.Println("'validate' requires at least on arg")
+		}
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(validateCmd)
-	validateCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file to be validated.")
 
 	fmt.Println("got here 1.")
 }
