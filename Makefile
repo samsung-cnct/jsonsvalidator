@@ -14,7 +14,7 @@ DOCKER_IMAGE := gexample
 # do some repo evals... want everyone to use their own, unless building for the team
 #
 DEFAULT_REPO := "samsung-bogus"
-DOCKER_REPO ?= $(DEFAULT_REPO)
+DOCKER_REPO ?= "notjames/jsonsvalidator"
 REPO := $(DOCKER_REPO)
 #
 #
