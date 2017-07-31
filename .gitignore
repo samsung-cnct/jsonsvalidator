@@ -35,3 +35,6 @@ coverage.out
 coverage.html
 coverage-all.out
 coverage-all.html
+
+# ignore the binary
+jsonsvalidator
