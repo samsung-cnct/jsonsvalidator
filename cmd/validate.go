@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -34,23 +35,23 @@ var (
 	jsonData   []byte
 )
 
-// validateCmd represents the validate command
-var validateCmd = &cobra.Command{
-	Use:   "validate",
-	Short: "Set config file to be validated.",
-	Long: `Use "validate" to specify the file that needs to be ` +
-		`validated via a JSON schema. Remember, this is ` +
-		`THE CONFIG THAT NEEDS TO BE VALIDATED.`,
-	Example: "validate  <instance/config file>",
-	//Args:    cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		if FileExists(configFile) {
-			jsonData, err = nrmlzFileContents(configFile)
-		}
+// Result is the structure containing the validation results from JSON schema validation
+type Result struct {
+	IsValid   bool    `json:"is_valid"`
+	Exception []error `json:"exception"`
+	Config    string  `json:"config"`
+	Schema    string  `json:"schema"`
+}
 
-		jsonData, err = validate(schemaFile, jsonData)
-		return nil
-	},
+// NewResult initializes Result with default values.
+func NewResult() Result {
+	result := Result{}
+	result.IsValid = false
+	result.Config = ""
+	result.Exception = nil
+	result.Schema = ""
+
+	return result
 }
 
 // nrmlzFileContents injests a file, reads the contents, & returns
@@ -101,34 +102,65 @@ func FileExists(name string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
-func validate(schemaFile string, config []byte) ([]byte, error) {
+//func validate(schemaFile string, config []byte) error {
+func validate(schemaFile string, config []byte) {
+	result := NewResult()
+	result.Config = (configFile)
+	result.Schema = (schemaFile)
+
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaFile)
 	documentLoader := gojsonschema.NewBytesLoader(config)
 
-	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
 
 	if err != nil {
-		return nil, err
-	}
-
-	if result.Valid() {
-		fmt.Println("The document is valid")
+		//fmt.Printf("err is %s", err)
+		result.Exception = append(result.Exception, err)
 	} else {
-		fmt.Println("The document is not valid. see errors:")
-		for _, desc := range result.Errors() {
-			fmt.Printf("- %s\n", desc)
+		if validated.Valid() {
+			result.IsValid = true
+		} else {
+			for _, desc := range validated.Errors() {
+				e := errors.New(desc.String())
+				result.Exception = append(result.Exception, e)
+			}
 		}
 	}
 
-	return nil, nil
+	um, _ := json.Marshal(result)
+	fmt.Println(string(um))
+	//return err
+}
+
+// validateCmd represents the validate command
+var validateCmd = &cobra.Command{
+	Use:   "validate",
+	Short: "Set config file to be validated.",
+	Long: `Use the "validate" verb preparatory to specifying the flags used to` +
+		`specify a JSON schema and config, -f and -c.`,
+	Example: "validate  -s <schema> -c <instance/config file>",
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		if FileExists(configFile) {
+			jsonData, err = nrmlzFileContents(configFile)
+		}
+
+		/*
+			if err = validate(schemaFile, jsonData); err != nil {
+				return err
+			}
+		*/
+		validate(schemaFile, jsonData)
+		return nil
+	},
 }
 
 func init() {
 	RootCmd.AddCommand(validateCmd)
 
-	validateCmd.PersistentFlags().StringVarP(&schemaFile, "schema", "s", "", "schema file or directory.")
+	validateCmd.PersistentFlags().StringVarP(&schemaFile, "schema", "s", "", "schema file to validate against.")
 	validateCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file to be validated.")
 }
