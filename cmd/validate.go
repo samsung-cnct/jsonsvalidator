@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 
 	"io/ioutil"
 
@@ -26,6 +27,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -52,6 +54,50 @@ func NewResult() Result {
 	result.Schema = ""
 
 	return result
+}
+
+// CheckRequiredFlags enforce Cobra to fail with an error
+// when required CLI args are missing.
+// TODO this will need to be revisited since flags
+// may or may not require arguments. In the case of this
+// application, both args (currently) require arguments.
+// Unfortunately, this is an oversight of Cobra as 20170801
+func CheckRequiredFlags(flags *pflag.FlagSet) error {
+	requiredError := false
+	flagName := ""
+	//p.Println(flags)
+	flags.VisitAll(func(flag *pflag.Flag) {
+		requiredAnnotation := flag.Annotations[cobra.BashCompOneRequiredFlag]
+
+		if len(requiredAnnotation) == 0 {
+			return
+		}
+
+		flagRequired := requiredAnnotation[0] == "true"
+
+		if flagRequired && !flag.Changed {
+			requiredError = true
+			flagName = flag.Name
+		}
+	})
+
+	if requiredError {
+		return errors.New("Required flag `" + flagName + "` has not been set")
+	}
+
+	return nil
+}
+
+// RequiredFlagHasArgs Check if required flags have args
+func RequiredFlagHasArgs(flag string, arg string) error {
+	re := regexp.MustCompile(arg)
+	match := re.FindStringSubmatch(flag)
+	//p.Println(match)
+	if len(arg) == 0 || len(match) > 0 {
+		return errors.New("flag `" + flag + "` requires argument")
+	}
+
+	return nil
 }
 
 // nrmlzFileContents injests a file, reads the contents, & returns
@@ -106,7 +152,6 @@ func FileExists(name string) bool {
 	return true
 }
 
-//func validate(schemaFile string, config []byte) error {
 func validate(schemaFile string, config []byte) {
 	result := NewResult()
 	result.Config = (configFile)
@@ -118,7 +163,6 @@ func validate(schemaFile string, config []byte) {
 	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
 
 	if err != nil {
-		//fmt.Printf("err is %s", err)
 		result.Exception = append(result.Exception, err)
 	} else {
 		if validated.Valid() {
@@ -133,7 +177,6 @@ func validate(schemaFile string, config []byte) {
 
 	um, _ := json.Marshal(result)
 	fmt.Println(string(um))
-	//return err
 }
 
 // validateCmd represents the validate command
@@ -143,16 +186,33 @@ var validateCmd = &cobra.Command{
 	Long: `Use the "validate" verb preparatory to specifying the flags used to` +
 		`specify a JSON schema and config, -f and -c.`,
 	Example: "validate  -s <schema> -c <instance/config file>",
+	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+		err = CheckRequiredFlags(cmd.Flags())
+		if err != nil {
+			return err
+		}
+
+		err = RequiredFlagHasArgs("schema", schemaFile)
+		if err != nil {
+			return err
+		}
+
+		err = RequiredFlagHasArgs("config", configFile)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if FileExists(configFile) {
 			jsonData, err = nrmlzFileContents(configFile)
-		}
 
-		/*
-			if err = validate(schemaFile, jsonData); err != nil {
+			if err != nil {
 				return err
 			}
-		*/
+		}
+
 		validate(schemaFile, jsonData)
 		return nil
 	},
@@ -163,4 +223,7 @@ func init() {
 
 	validateCmd.PersistentFlags().StringVarP(&schemaFile, "schema", "s", "", "schema file to validate against.")
 	validateCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file to be validated.")
+
+	validateCmd.MarkPersistentFlagRequired("schema")
+	validateCmd.MarkPersistentFlagRequired("config")
 }

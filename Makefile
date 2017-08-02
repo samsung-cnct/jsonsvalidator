@@ -14,6 +14,8 @@ DOCKER_IMAGE := gexample
 # do some repo evals... want everyone to use their own, unless building for the team
 #
 DEFAULT_REPO := "samsung-bogus"
+
+# will need to be changed to samsung-cnct for prod version
 DOCKER_REPO ?= "notjames/jsonsvalidator"
 REPO := $(DOCKER_REPO)
 #
