@@ -3,10 +3,13 @@
 ## JSON Schema Validator
 ### Dependencies
 
-[![gojsonschema library (spec 4)](https://github.com/xeipuuv/gojsonschema)
-[![YAML validation library](https://github.com/ghodss/yaml)
-[![Cobra](https://github.com/spf13/cobra)
-[![Cobra POSIX Flags library](https://github.com/spf13/pflag)
+[gojsonschema library (spec 4)](https://github.com/xeipuuv/gojsonschema)
+
+[YAML validation library](https://github.com/ghodss/yaml)
+
+[Cobra](https://github.com/spf13/cobra)
+
+[Cobra POSIX Flags library](https://github.com/spf13/pflag)
 
 ### Build process
 Currently still manual IE:
