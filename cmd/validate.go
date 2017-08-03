@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 
@@ -39,11 +40,17 @@ var (
 
 // Result is the structure containing the validation results from JSON schema validation
 type Result struct {
-	IsValid   bool    `json:"is_valid"`
-	Exception []error `json:"exception"`
-	Config    string  `json:"config"`
-	Schema    string  `json:"schema"`
+	IsValid   bool     `json:"is_valid"`
+	Exception []string `json:"exception"`
+	Config    string   `json:"config"`
+	Schema    string   `json:"schema"`
 }
+
+// CIDRFormatChecker struct to extend gojsonschema FormatCheckers
+type CIDRFormatChecker struct{}
+
+// SymverFormatChecker struct to extend gojsonschema FormatCheckers
+type SymverFormatChecker struct{}
 
 // NewResult initializes Result with default values.
 func NewResult() Result {
@@ -92,7 +99,7 @@ func CheckRequiredFlags(flags *pflag.FlagSet) error {
 func RequiredFlagHasArgs(flag string, arg string) error {
 	re := regexp.MustCompile(arg)
 	match := re.FindStringSubmatch(flag)
-	//p.Println(match)
+
 	if len(arg) == 0 || len(match) > 0 {
 		return errors.New("flag `" + flag + "` requires argument")
 	}
@@ -152,6 +159,44 @@ func FileExists(name string) bool {
 	return true
 }
 
+// IsFormat for CIDRFormatChecker - custom format checker for CIDRs
+// extending gojsonschema.FormatChecker
+// https://github.com/xeipuuv/gojsonschema
+func (f CIDRFormatChecker) IsFormat(input string) (validCIDR bool) {
+	validCIDR = false
+
+	_, _, err := net.ParseCIDR(input)
+
+	if err == nil {
+		validCIDR = true
+	}
+
+	return validCIDR
+}
+
+// IsFormat for SymverFormatChecker - custom format checker for symver
+// extending gojsonschema.FormatChecker
+// https://github.com/xeipuuv/gojsonschema
+func (f SymverFormatChecker) IsFormat(input string) (validSymver bool) {
+	expressions := make([]*regexp.Regexp, 0)
+
+	expressions = append(expressions, regexp.MustCompile(`^v?(0|[1-9]\d*)\.`),
+		regexp.MustCompile(`(0|[1-9]\d*)\.`),
+		regexp.MustCompile(`(0|[1-9]\d*`),
+		regexp.MustCompile(`(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?`),
+		regexp.MustCompile(`(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$`))
+
+	for _, re := range expressions {
+		match := re.FindStringSubmatch(input)
+
+		if match != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 func validate(schemaFile string, config []byte) {
 	result := NewResult()
 	result.Config = (configFile)
@@ -163,14 +208,14 @@ func validate(schemaFile string, config []byte) {
 	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
 
 	if err != nil {
-		result.Exception = append(result.Exception, err)
+		result.Exception = append(result.Exception, err.Error())
 	} else {
 		if validated.Valid() {
 			result.IsValid = true
 		} else {
 			for _, desc := range validated.Errors() {
 				e := errors.New(desc.String())
-				result.Exception = append(result.Exception, e)
+				result.Exception = append(result.Exception, e.Error())
 			}
 		}
 	}
@@ -205,6 +250,12 @@ var validateCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		// extend the checker to handle CIDRs
+		gojsonschema.FormatCheckers.Add("cidr", CIDRFormatChecker{})
+
+		// extend the checker to handle symver
+		gojsonschema.FormatCheckers.Add("symver", SymverFormatChecker{})
+
 		if FileExists(configFile) {
 			jsonData, err = nrmlzFileContents(configFile)
 
@@ -223,7 +274,4 @@ func init() {
 
 	validateCmd.PersistentFlags().StringVarP(&schemaFile, "schema", "s", "", "schema file to validate against.")
 	validateCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file to be validated.")
-
-	validateCmd.MarkPersistentFlagRequired("schema")
-	validateCmd.MarkPersistentFlagRequired("config")
 }
