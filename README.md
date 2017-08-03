@@ -1,8 +1,17 @@
-# jsonsvalidator
-JSON Schema Validator
+# __jsonsvalidator__ performs JSON schema validation against an arbitrary config (YAML or JSON) file.
 
-This directory is for needed dependent packages.
+## JSON Schema Validator
+### Dependencies
 
-Current philosophies have been to create this directory by hand (vs automatically with glide) and check it in. 
-This instead of using the package manager to pull a local version of the needed dependencies instead.  
-When dependency management tools work better...this will change.
+[![gojsonschema library (spec 4)](https://github.com/xeipuuv/gojsonschema)
+[![YAML validation library](https://github.com/ghodss/yaml)
+[![Cobra](https://github.com/spf13/cobra)
+[![Cobra POSIX Flags library](https://github.com/spf13/pflag)
+
+### Build process
+Currently still manual IE:
+
+`$ go build -o jsonsvalidator main.go`
+
+
+## More to come
