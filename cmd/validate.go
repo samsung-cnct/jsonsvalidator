@@ -24,7 +24,7 @@ import (
 
 	"io/ioutil"
 
-	p "github.com/kr/pretty"
+	//p "github.com/kr/pretty"
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -182,7 +182,7 @@ func (f SymverFormatChecker) IsFormat(input string) (validSymver bool) {
 
 	expressions = append(expressions, regexp.MustCompile(`^v?(0|[1-9]\d*)\.`),
 		regexp.MustCompile(`(0|[1-9]\d*)\.`),
-		regexp.MustCompile(`(0|[1-9]\d*`),
+		regexp.MustCompile(`(0|[1-9]\d*)`),
 		regexp.MustCompile(`(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?`),
 		regexp.MustCompile(`(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$`))
 
@@ -205,31 +205,31 @@ func validate(schemaFile string, config []byte) {
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaFile)
 	documentLoader := gojsonschema.NewBytesLoader(config)
 
-	p.Println(schemaLoader)
+	//p.Println(schemaLoader)
 	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
 
 	if err != nil {
-		p.Println(validated)
-		p.Println(err)
 		result.Exception = append(result.Exception, err.Error())
 	} else {
 		if validated.Valid() {
 			result.IsValid = true
 		} else {
 			for _, desc := range validated.Errors() {
-				p.Printf("description: %v\n", desc.Description())
-				p.Printf("context: %v\n", desc.Type())
-				p.Printf("type: %v\n", desc.Context())
-				p.Printf("field: %v\n", desc.Field())
-				p.Printf("details: %v\n", desc.Details())
+				/*
+					p.Printf("description: %v\n", desc.Description())
+					p.Printf("context: %v\n", desc.Type())
+					p.Printf("type: %v\n", desc.Context())
+					p.Printf("field: %v\n", desc.Field())
+					p.Printf("details: %v\n", desc.Details())
+				*/
 				e := errors.New(desc.String())
 				result.Exception = append(result.Exception, e.Error())
 			}
 		}
 	}
 
-	um, _ := json.Marshal(result)
-	fmt.Println(string(um))
+	jsonOutput, _ := json.Marshal(result)
+	fmt.Println(string(jsonOutput))
 }
 
 // validateCmd represents the validate command
