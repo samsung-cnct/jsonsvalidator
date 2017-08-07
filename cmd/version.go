@@ -1,4 +1,4 @@
-// Copyright © 2017 Samsung CNCT
+// Copyright © 2016 The Barrel Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,25 +16,29 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"runtime"
 
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
-var runtimeCommandName = os.Args[0]
+var (
+	Version string
+	Build   string
+)
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
-	Use:   runtimeCommandName,
-	Short: "Validate JSON config against the JSON schema validator (spec v4).",
+// versionCmd represents the version command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Show current version."
+	Long: `Display the version of this application.`
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Version: ", Version)
+		fmt.Println("Git commit hash: ", Build)
+		fmt.Println("OS: ", runtime.GOOS)
+		fmt.Println("Arch: ", runtime.GOARCH)
+	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
+func init() {
+	RootCmd.AddCommand(versionCmd)
 }

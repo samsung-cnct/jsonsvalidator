@@ -179,7 +179,7 @@ func (f CIDRFormatChecker) IsFormat(input string) (validCIDR bool) {
 // https://github.com/xeipuuv/gojsonschema
 func (f SymverFormatChecker) IsFormat(input string) (validSymver bool) {
 	expressions := make([]*regexp.Regexp, 0)
-
+	fmt.Println("GOT HERE")
 	expressions = append(expressions, regexp.MustCompile(`^v?(0|[1-9]\d*)\.`),
 		regexp.MustCompile(`(0|[1-9]\d*)\.`),
 		regexp.MustCompile(`(0|[1-9]\d*)`),
@@ -188,10 +188,10 @@ func (f SymverFormatChecker) IsFormat(input string) (validSymver bool) {
 
 	for _, re := range expressions {
 		match := re.FindStringSubmatch(input)
+		fmt.Println("match was...")
+		p.Println(re)
 
 		if match != nil {
-			fmt.Println("Uh, gotta fail on...")
-			p.Println(re)
 			return true
 		}
 	}
@@ -240,7 +240,7 @@ var validateCmd = &cobra.Command{
 	Short: "Set config file to be validated.",
 	Long: `Use the "validate" verb preparatory to specifying the flags used to` +
 		`specify a JSON schema and config, -f and -c.`,
-	Example: "validate  -s <schema> -c <instance/config file>",
+	Example: "validate  --schema <schema> --config <instance/config file>",
 	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
 		err = CheckRequiredFlags(cmd.Flags())
 		if err != nil {
