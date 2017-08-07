@@ -24,7 +24,7 @@ import (
 
 	"io/ioutil"
 
-	//p "github.com/kr/pretty"
+	p "github.com/kr/pretty"
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -190,6 +190,8 @@ func (f SymverFormatChecker) IsFormat(input string) (validSymver bool) {
 		match := re.FindStringSubmatch(input)
 
 		if match != nil {
+			fmt.Println("Uh, gotta fail on...")
+			p.Println(re)
 			return true
 		}
 	}

@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "check-semver.json",
+  "$$target": "check-semver.json",
+  "title": "Validate semver (semantics version)",
+  "description": "Validation schema for jsonsvalidator to check semantics version.",
+
+  "properties": {
+    "version": {
+      "description": "Version used for the validation.",
+      "format": "semver",
+      "type": "string"
+    }
+  },
+
+  "required": [
+    "version"
+  ],
+
+  "type": "object"
+}

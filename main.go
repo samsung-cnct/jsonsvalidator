@@ -1,4 +1,5 @@
-// Copyright © 2017 Samsung CNCT - Jim Conner <snafu.x@gmail.com>
+// Copyright © 2017 Samsung CNCT
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -13,8 +14,8 @@
 
 package main
 
-import "jsonsvalidator/cmd"
+import jsv "github.com/notjames/jsonsvalidator/cmd"
 
 func main() {
-	cmd.Execute()
+	jsv.Execute()
 }
