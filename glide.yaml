@@ -2,7 +2,7 @@
 package: .
 import:
   - package: github.com/ghodss/yaml
-  - package: github.com/samsung-cnct/jsonsvalidator
+  - package: github.com/notjames/jsonsvalidator
 subpackages:
   - cmd
   - package: github.com/kr/pretty

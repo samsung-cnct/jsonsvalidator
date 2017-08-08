@@ -22,15 +22,20 @@ import (
 )
 
 var (
+	// Version variable contains the version of this application
 	Version string
-	Build   string
+
+	// Build variable contains the build version of this application
+	Build string
 )
 
-// versionCmd represents the version command
+// versionCmd represents the version argument which will give
+// the caller of the command the runtime version, build, OS, and Arch
+// for the command.
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Show current version."
-	Long: `Display the version of this application.`
+	Short: "Show current version.",
+	Long:  `Display the version of this application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Version: ", Version)
 		fmt.Println("Git commit hash: ", Build)
