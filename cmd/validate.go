@@ -252,8 +252,7 @@ var validateCmd = &cobra.Command{
 			return err
 		}
 
-		err = RequiredFlagHasArgs("config", configFile)
-		if err != nil {
+		if err = RequiredFlagHasArgs("config", configFile); err != nil {
 			return err
 		}
 
