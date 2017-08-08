@@ -242,13 +242,11 @@ var validateCmd = &cobra.Command{
 		`specify a JSON schema and config, -f and -c.`,
 	Example: "validate  --schema <schema> --config <instance/config file>",
 	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
-		err = CheckRequiredFlags(cmd.Flags())
-		if err != nil {
+		if err = CheckRequiredFlags(cmd.Flags()); err != nil {
 			return err
 		}
 
-		err = RequiredFlagHasArgs("schema", schemaFile)
-		if err != nil {
+		if err = RequiredFlagHasArgs("schema", schemaFile); err != nil {
 			return err
 		}
 
@@ -256,7 +254,7 @@ var validateCmd = &cobra.Command{
 			return err
 		}
 
-		return nil
+		return err
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		// extend the checker to handle CIDRs
