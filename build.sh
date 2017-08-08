@@ -50,8 +50,6 @@ function gexample::build::validate_tree {
     # validate the required source installation
     #
     #EXPECTED_BUILD_PATH="/src/github.com/samsung-cnct/golang-tools/example-project"
-    echo $1
-    exit
     EXPECTED_BUILD_PATH="/src/github.com/notjames/jsonsvalidator"
 
     if [ "${1}" != "${EXPECTED_BUILD_PATH}" ]; then
