@@ -108,7 +108,7 @@ lint:
 	go get github.com/golang/lint/golint
 	#go get -u honnef.co/go/tools/cmd/...
 	#go get -u honnef.co/go/tools/simple
-	go get -u github.com/dominikh/go-tools/simple
+	go get -u github.com/dominikh/go-tools/...
 	golint $(NOVENDOR)
 	gosimple $(NOVENDOR)
 
