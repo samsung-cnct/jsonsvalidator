@@ -16,7 +16,7 @@ BUILD=`git rev-parse HEAD`
 LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.Build=${BUILD}"
 #
 #
-IMAGE_NAME := exampleapp
+IMAGE_NAME := jsonsvalidator
 
 #
 # avoid checking etc the vendor dir
