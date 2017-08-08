@@ -14,8 +14,7 @@
 
 package main
 
-//import jsv "jsonsvalidator/cmd"
-import jsv "notjames/jsonsvalidator/cmd"
+import jsv "jsonsvalidator/cmd"
 
 func main() {
 	jsv.Execute()
