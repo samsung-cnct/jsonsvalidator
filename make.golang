@@ -105,7 +105,6 @@ doc:
 	#godoc -http=:6060 -index
 
 lint:
-	#go get github.com/golang/lint/golint
 	go get github.com/dominikh/go-tools
 	go get honnef.co/go/simple/cmd/gosimple
 	golint $(NOVENDOR)
