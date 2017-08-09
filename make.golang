@@ -27,9 +27,6 @@ PKGS := "./cmd ./apkg"
 # find the certs.  use the first location found
 #
 CONTAINER_PATH := ./_containerize
-CERTS_NAME := ca-certificates.crt
-CERTS_LOC := $(shell find / -name "$(CERTS_NAME)" -print -quit 2>/dev/null)
-CERTS_DEST := $(CONTAINER_PATH)/$(CERTS_NAME)
 
 repo-warning-in:
 	@echo "============================================================="
@@ -37,7 +34,6 @@ repo-warning-in:
 	@echo "GOPATH:$(GOPATH)"
 	@echo "GOROOT:$(GOROOT)"
 	@echo "GOBIN:$(GOBIN)"
-	@echo "CERTS_LOC:$(CERTS_LOC)"
 	@echo "============================================================="
 	@pwd
 	@ls -l

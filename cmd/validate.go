@@ -24,8 +24,7 @@ import (
 
 	"io/ioutil"
 
-	p "github.com/kr/pretty"
-
+	"github.com/blang/semver"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -49,8 +48,8 @@ type Result struct {
 // CIDRFormatChecker struct to extend gojsonschema FormatCheckers
 type CIDRFormatChecker struct{}
 
-// SymverFormatChecker struct to extend gojsonschema FormatCheckers
-type SymverFormatChecker struct{}
+// SemverFormatChecker struct to extend gojsonschema FormatCheckers
+type SemVerFormatChecker struct{}
 
 // NewResult initializes Result with default values.
 func NewResult() Result {
@@ -174,29 +173,26 @@ func (f CIDRFormatChecker) IsFormat(input string) (validCIDR bool) {
 	return validCIDR
 }
 
-// IsFormat for SymverFormatChecker - custom format checker for symver
+// IsFormat for SemVerFormatChecker - custom format checker for semantics version format
 // extending gojsonschema.FormatChecker
 // https://github.com/xeipuuv/gojsonschema
-func (f SymverFormatChecker) IsFormat(input string) (validSymver bool) {
-	expressions := make([]*regexp.Regexp, 0)
-	fmt.Println("GOT HERE")
-	expressions = append(expressions, regexp.MustCompile(`^v?(0|[1-9]\d*)\.`),
-		regexp.MustCompile(`(0|[1-9]\d*)\.`),
-		regexp.MustCompile(`(0|[1-9]\d*)`),
-		regexp.MustCompile(`(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?`),
-		regexp.MustCompile(`(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$`))
+func (f SemVerFormatChecker) IsFormat(input string) (validSemVer bool) {
+	//sv, ok := semver.Make(input)
+	_, ok := semver.Make(input)
 
-	for _, re := range expressions {
-		match := re.FindStringSubmatch(input)
-		fmt.Println("match was...")
-		p.Println(re)
-
-		if match != nil {
-			return true
-		}
+	if ok != nil {
+		return false
 	}
 
-	return false
+	/*
+		fmt.Printf("Major: %d\n", sv.Major)
+		fmt.Printf("Minor: %d\n", sv.Minor)
+		fmt.Printf("Patch: %d\n", sv.Patch)
+		fmt.Printf("Pre: %s\n", sv.Pre)
+		fmt.Printf("Build: %s\n", sv.Build)
+	*/
+
+	return true
 }
 
 func validate(schemaFile string, config []byte) {
@@ -261,7 +257,7 @@ var validateCmd = &cobra.Command{
 		gojsonschema.FormatCheckers.Add("cidr", CIDRFormatChecker{})
 
 		// extend the checker to handle symver
-		gojsonschema.FormatCheckers.Add("symver", SymverFormatChecker{})
+		gojsonschema.FormatCheckers.Add("semver", SemVerFormatChecker{})
 
 		if FileExists(configFile) {
 			jsonData, err = nrmlzFileContents(configFile)
