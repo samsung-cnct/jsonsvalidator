@@ -23,6 +23,7 @@ import (
 	"regexp"
 
 	"io/ioutil"
+	//p "github.com/kr/pretty"
 
 	"github.com/blang/semver"
 	"github.com/ghodss/yaml"
@@ -148,14 +149,14 @@ func isJSON(b []byte) bool {
 }
 
 // FileExists check if a file exists on the system
-func FileExists(name string) bool {
+func FileExists(name string) (exists bool, err error) {
 	if _, err := os.Stat(name); err != nil {
 		if os.IsNotExist(err) {
-			return false
+			return false, err
 		}
 	}
 
-	return true
+	return true, err
 }
 
 // IsFormat for CIDRFormatChecker - custom format checker for CIDRs
@@ -177,7 +178,6 @@ func (f CIDRFormatChecker) IsFormat(input string) (validCIDR bool) {
 // extending gojsonschema.FormatChecker
 // https://github.com/xeipuuv/gojsonschema
 func (f SemVerFormatChecker) IsFormat(input string) (validSemVer bool) {
-	//sv, ok := semver.Make(input)
 	_, ok := semver.Make(input)
 
 	if ok != nil {
@@ -185,6 +185,7 @@ func (f SemVerFormatChecker) IsFormat(input string) (validSemVer bool) {
 	}
 
 	/*
+		change _ (above) to sv
 		fmt.Printf("Major: %d\n", sv.Major)
 		fmt.Printf("Minor: %d\n", sv.Minor)
 		fmt.Printf("Patch: %d\n", sv.Patch)
@@ -195,13 +196,27 @@ func (f SemVerFormatChecker) IsFormat(input string) (validSemVer bool) {
 	return true
 }
 
-func validate(schemaFile string, config []byte) {
+// JSONDataRespValidate will is the main function that performs validation. However,
+// this function always returns a data structure `result` of type struct containing
+// data for the validation.
+func JSONDataRespValidate(schemaFile string, configFile string) (jsonOutput []byte, err error) {
 	result := NewResult()
 	result.Config = (configFile)
 	result.Schema = (schemaFile)
+	fexists, err := FileExists(configFile)
+
+	if fexists {
+		jsonData, err = nrmlzFileContents(configFile)
+
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		return nil, err
+	}
 
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaFile)
-	documentLoader := gojsonschema.NewBytesLoader(config)
+	documentLoader := gojsonschema.NewBytesLoader(jsonData)
 
 	//p.Println(schemaLoader)
 	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
@@ -226,8 +241,32 @@ func validate(schemaFile string, config []byte) {
 		}
 	}
 
-	jsonOutput, _ := json.Marshal(result)
-	fmt.Println(string(jsonOutput))
+	return json.Marshal(result)
+}
+
+// JSONStrRespValidate calls JSONDataRespValidate() and marshalls the JSON response to
+// a string returning the string to the caller.
+func JSONStrRespValidate(schemaFile string, configFile string) (jsonOutput string, err error) {
+	if jsonResponse, err := Validate(schemaFile, configFile); err == nil {
+		return string(jsonResponse), err
+	} else {
+		result := NewResult()
+		result.Config = (configFile)
+		result.Schema = (schemaFile)
+		result.IsValid = false
+		result.Exception = append(result.Exception, err.Error())
+
+		errResult, err := json.Marshal(result)
+
+		return string(errResult), err
+	}
+}
+
+// Validate is simply a method alias which points to JSONDataRespValidate making
+// `Validate` by default return a go data structure to the caller. If one wants
+// to get a JSON string returned explicitly then one must call `JSONStrRespValidate()`
+func Validate(schemaFile string, configFile string) (jsonOutput []byte, err error) {
+	return JSONDataRespValidate(schemaFile, configFile)
 }
 
 // validateCmd represents the validate command
@@ -259,16 +298,10 @@ var validateCmd = &cobra.Command{
 		// extend the checker to handle symver
 		gojsonschema.FormatCheckers.Add("semver", SemVerFormatChecker{})
 
-		if FileExists(configFile) {
-			jsonData, err = nrmlzFileContents(configFile)
+		jsonstr, err := JSONStrRespValidate(schemaFile, configFile)
+		fmt.Println(jsonstr)
 
-			if err != nil {
-				return err
-			}
-		}
-
-		validate(schemaFile, jsonData)
-		return nil
+		return err
 	},
 }
 

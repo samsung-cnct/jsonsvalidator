@@ -13,3 +13,86 @@
 // limitations under the License.
 
 package cmd
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	re "regexp"
+	"testing"
+	//v "jsonsvalidator/cmd"
+	p "github.com/kr/pretty"
+)
+
+var testSchemaDir string = "./test_schemas"
+var testConfigDir string = "./test_configs"
+
+func pickFiles(files []os.FileInfo, regex string) (matching_files []os.FileInfo, err error) {
+	match := re.MustCompile(regex)
+
+	for _, file := range files {
+		if match.MatchString(file.Name()) {
+			matching_files = append(matching_files, file)
+		}
+	}
+
+	return matching_files, err
+}
+
+type cidrTest struct {
+	schema     string
+	config     string
+	jsonstring string
+	success    bool
+	have       bool
+	expect     bool
+}
+
+var tests cidrTest
+
+func buildTable() (err error) {
+	schema := fmt.Sprintf("%s/config.json", testSchemaDir)
+	configs, err := ioutil.ReadDir(testConfigDir)
+
+	if err == nil {
+		configs, err = pickFiles(configs, "cidr.*")
+
+		if len(configs) == 0 {
+			fmt.Println("No config files for CIDR checks. Stop.")
+			return
+		}
+
+		for _, cf := range configs {
+			jsondata, err1 := Validate(schema, cf.Name())
+			jsonstr, err2 := json.Marshal(string(jsondata))
+
+			if err1 == nil {
+				if err2 != nil {
+					err = err2
+					return err
+				}
+			}
+
+			if tests.have == tests.expect {
+				tests.success = true
+			}
+
+			tests.schema = schema
+			tests.config = cf.Name()
+			tests.jsonstring = string(jsonstr)
+			tests.expect = true
+		}
+	}
+
+	p.Println(tests)
+	return nil
+}
+
+func TestValidCIDR(t *testing.T) {
+}
+
+func main() {
+	table := buildTable()
+	//TestValidCIDR(validCIDRtable)
+}
