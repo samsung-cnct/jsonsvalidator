@@ -38,3 +38,6 @@ coverage-all.html
 
 # ignore the binary
 jsonsvalidator
+
+# lame MacOS fs garbage
+.DS_Store

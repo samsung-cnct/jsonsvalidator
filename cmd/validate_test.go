@@ -19,80 +19,106 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	re "regexp"
+	"path/filepath"
 	"testing"
-	//v "jsonsvalidator/cmd"
-	p "github.com/kr/pretty"
+
+	y "gopkg.in/yaml.v2"
 )
 
-var testSchemaDir string = "./test_schemas"
-var testConfigDir string = "./test_configs"
+var testYAML string = "./tests.yaml"
+var schemaTestsDir string
+var configTestsDir string
+var all_tests []string
 
-func pickFiles(files []os.FileInfo, regex string) (matching_files []os.FileInfo, err error) {
-	match := re.MustCompile(regex)
-
-	for _, file := range files {
-		if match.MatchString(file.Name()) {
-			matching_files = append(matching_files, file)
-		}
+type (
+	testCase struct {
+		schema     string
+		config     string
+		jsonstring string
+		success    bool
+		have       string
+		expect     string
 	}
 
-	return matching_files, err
-}
-
-type cidrTest struct {
-	schema     string
-	config     string
-	jsonstring string
-	success    bool
-	have       bool
-	expect     bool
-}
-
-var tests cidrTest
-
-func buildTable() (err error) {
-	schema := fmt.Sprintf("%s/config.json", testSchemaDir)
-	configs, err := ioutil.ReadDir(testConfigDir)
-
-	if err == nil {
-		configs, err = pickFiles(configs, "cidr.*")
-
-		if len(configs) == 0 {
-			fmt.Println("No config files for CIDR checks. Stop.")
-			return
-		}
-
-		for _, cf := range configs {
-			jsondata, err1 := Validate(schema, cf.Name())
-			jsonstr, err2 := json.Marshal(string(jsondata))
-
-			if err1 == nil {
-				if err2 != nil {
-					err = err2
-					return err
-				}
-			}
-
-			if tests.have == tests.expect {
-				tests.success = true
-			}
-
-			tests.schema = schema
-			tests.config = cf.Name()
-			tests.jsonstring = string(jsonstr)
-			tests.expect = true
-		}
+	YAMLConf struct {
+		ConfigsDir string  `yaml:"configs_dir"`
+		SchemasDir string  `yaml:"schemas_dir"`
+		Tests      []Tests `yaml:"tests"`
 	}
 
-	p.Println(tests)
-	return nil
+	Tests struct {
+		Name   string `yaml:"name"`
+		Schema string `yaml:"schema"`
+		Config string `yaml:"config"`
+		Expect string `yaml:"expect"`
+	}
+)
+
+func confFiles(schema, config string) (string, string) {
+	if _, err := FileExists(schema); err == nil {
+		if _, err := FileExists(config); err == nil {
+			if err != nil {
+				fmt.Println(err.Error())
+				return "", ""
+			}
+		} else {
+			fmt.Println(err.Error())
+			return "", ""
+		}
+	} else {
+		fmt.Println(err.Error())
+		return "", ""
+	}
+
+	return schema, config
 }
 
-func TestValidCIDR(t *testing.T) {
-}
+func TestTablesUsingYAML(t *testing.T) {
+	var config YAMLConf
 
-func main() {
-	table := buildTable()
-	//TestValidCIDR(validCIDRtable)
+	my_yaml, _ := ioutil.ReadFile(testYAML)
+	err := y.Unmarshal(my_yaml, &config)
+
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	schemaTestsDir = config.SchemasDir
+	configTestsDir = config.ConfigsDir
+	tests_to_run := config.Tests
+
+	SuccessMap := map[string]bool{"success": true, "fail": false}
+	SuccessMapRev := map[bool]string{true: "success", false: "fail"}
+
+	for _, this_test := range tests_to_run {
+		var test_case testCase
+		var validated Result
+
+		// set default expectation.
+		test_case.expect = ""
+
+		cwd, err := os.Getwd()
+
+		// Schemas require absolute path
+		schema := filepath.Join(cwd, schemaTestsDir, this_test.Schema)
+
+		// Configs do not
+		config := filepath.Join(configTestsDir, this_test.Config)
+
+		// Verify schema and config file for this test run exist
+		schema, config = confFiles(schema, config)
+
+		// Run validation between schema and config
+		if jsondata, ok := Validate(schema, config); ok == nil {
+			if err = json.Unmarshal(jsondata, &validated); err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			test_case.have = SuccessMapRev[validated.IsValid]
+
+			if validated.IsValid == SuccessMap[this_test.Expect] {
+				test_case.success = true
+			}
+		}
+	}
 }
