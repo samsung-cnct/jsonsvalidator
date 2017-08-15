@@ -28,7 +28,6 @@ import (
 var testYAML string = "./tests.yaml"
 var schemaTestsDir string
 var configTestsDir string
-var all_tests []string
 
 type (
 	testCase struct {
@@ -117,7 +116,7 @@ func TestTablesUsingYAML(t *testing.T) {
 					test_case.config, test_case.schema, test_case.expect, test_case.have)
 			} else {
 				test_case.success = false
-				t.Errorf("config(%s) validated against schema(%s) failed: expected: %v   had: %v   with_error(s): `%s`",
+				t.Errorf("config(%s) validated against schema(%s) *FAILED*: expected: %v   had: %v   with_error(s): `%s`",
 					test_case.config, test_case.schema, test_case.expect, test_case.have, validated.Exception)
 			}
 		}
