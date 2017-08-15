@@ -1,8 +1,3 @@
-# golang Development
-
-###### Mikel Nelson (6/2017)
-Example golang project set up
-
 ## Docs
 ### Rules
 * Every file should have the License and Copyright at the top.

@@ -10,17 +10,17 @@
 # https://hub.docker.com/_/golang/
 #
 # Vars for version and build
-VERSION ?= 0.0.3
+VERSION ?= 1.0.0
 #
 # do some repo evals... want everyone to use their own, unless building for the team
 #
 DEFAULT_REPO := "samsung-bogus"
-DOCKER_REPO ?= "notjames"
+DOCKER_REPO ?= DEFAULT_REPO
 REPO := $(DOCKER_REPO)
 #
 #
-DOCKER_IMAGE := example-img
-SOURCE_APP := example-linux
+DOCKER_IMAGE := jsonsvalidator-img
+SOURCE_APP := jsonsvalidator-linux
 
 repo-warning:
 	@echo "============================================================="
@@ -67,5 +67,4 @@ clean-image:
 	-rm -f $(DOCKER_IMAGE)
 
 very-clean: clean-image
-	-rm -f ca-certificates.crt
 	-rm -f $(SOURCE_APP)

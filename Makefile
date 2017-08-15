@@ -8,15 +8,15 @@
 # golog compile via docker container:
 # https://hub.docker.com/_/golang/
 #
-VERSION := 0.0.3
-DOCKER_IMAGE := gexample
+VERSION := 1.0.0
+DOCKER_IMAGE := jsonsvalidator
 #
 # do some repo evals... want everyone to use their own, unless building for the team
 #
 DEFAULT_REPO := "samsung-bogus"
 
 # will need to be changed to samsung-cnct for prod version
-DOCKER_REPO ?= "notjames/jsonsvalidator"
+DOCKER_REPO ?= DEFAULT_REPO
 REPO := $(DOCKER_REPO)
 #
 #

@@ -106,21 +106,12 @@ func RequiredFlagHasArgs(flag string, arg string) error {
 	return nil
 }
 
-// nrmlzFileContents injests a file, reads the contents, & returns
+// FileContentsNormalizer injests a file, reads the contents, & returns
 // the content in JSON. It can take YAML or JSON data. If it's JSON,
 // it's just returned. If it's YAML, it's validated, JSONized, and
 // then returned. If the YAML is not valid then the application
 // exits with an error.
-func nrmlzFileContents(configFile string) (jsonContents []byte, err error) {
-	/*
-	   read contents:
-	   is
-	     valid json? return it
-	   else
-	     is validyaml? yaml2json it
-	   else
-	     return nil, err
-	*/
+func FileContentsNormalizer(configFile string) (jsonContents []byte, err error) {
 	var fileContents []byte
 
 	fileContents, err = ioutil.ReadFile(configFile)
@@ -196,7 +187,7 @@ func JSONDataRespValidate(schemaFile string, configFile string) (jsonOutput []by
 	fexists, err := FileExists(configFile)
 
 	if fexists {
-		jsonData, err = nrmlzFileContents(configFile)
+		jsonData, err = FileContentsNormalizer(configFile)
 
 		if err != nil {
 			return nil, err
