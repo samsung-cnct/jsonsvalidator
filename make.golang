@@ -22,7 +22,7 @@ IMAGE_NAME := jsonsvalidator
 # avoid checking etc the vendor dir
 #
 NOVENDOR := $(shell glide novendor)
-PKGS := "./cmd ./apkg"
+PKGS := "./cmd ./jsonsvalidator"
 #
 # find the certs.  use the first location found
 #
@@ -69,16 +69,16 @@ build-darwin: repo-warning-in vet
 test: vet lint
 	go test -cover -v $(LDFLAGS) $(NOVENDOR)
 
-test-all: test-apkg test-cmd
+test-all: test-jsonsvalidator test-cmd
 
-test-apkg: repo-warning-in vet lint
-	go test -race -v $(LDFLAGS) ./apkg/...
+test-jsonsvalidator: repo-warning-in vet lint
+	go test -race -v $(LDFLAGS) ./jsonsvalidator/...
 
 test-cmd: repo-warning-in vet lint
 	go test -race -v $(LDFLAGS) ./cmd/...
 
 cover-runner: repo-warning-in
-	go test -covermode=count -coverprofile=coverage.out ./apkg
+	go test -covermode=count -coverprofile=coverage.out ./jsonsvalidator
 	go tool cover -html=coverage.out -o=coverage.html
 
 view-debug:
@@ -96,7 +96,7 @@ vet:
 	go vet $(NOVENDOR)
 
 doc:
-	godoc ./apkg
+	godoc ./jsonsvalidator
 	godoc ./cmd
 	#godoc -http=:6060 -index
 

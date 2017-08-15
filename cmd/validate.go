@@ -18,7 +18,7 @@ import (
 	"errors"
 	"regexp"
 
-	jsv "jsonsvalidator/cmd"
+	jsv "jsonsvalidator/jsv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
