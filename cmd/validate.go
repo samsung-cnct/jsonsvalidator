@@ -23,7 +23,6 @@ import (
 	"regexp"
 
 	"io/ioutil"
-	//p "github.com/kr/pretty"
 
 	"github.com/blang/semver"
 	"github.com/ghodss/yaml"
@@ -72,7 +71,7 @@ func NewResult() Result {
 func CheckRequiredFlags(flags *pflag.FlagSet) error {
 	requiredError := false
 	flagName := ""
-	//p.Println(flags)
+
 	flags.VisitAll(func(flag *pflag.Flag) {
 		requiredAnnotation := flag.Annotations[cobra.BashCompOneRequiredFlag]
 
@@ -184,15 +183,6 @@ func (f SemVerFormatChecker) IsFormat(input string) (validSemVer bool) {
 		return false
 	}
 
-	/*
-		change _ (above) to sv
-		fmt.Printf("Major: %d\n", sv.Major)
-		fmt.Printf("Minor: %d\n", sv.Minor)
-		fmt.Printf("Patch: %d\n", sv.Patch)
-		fmt.Printf("Pre: %s\n", sv.Pre)
-		fmt.Printf("Build: %s\n", sv.Build)
-	*/
-
 	return true
 }
 
@@ -218,7 +208,6 @@ func JSONDataRespValidate(schemaFile string, configFile string) (jsonOutput []by
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaFile)
 	documentLoader := gojsonschema.NewBytesLoader(jsonData)
 
-	//p.Println(schemaLoader)
 	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
 
 	if err != nil {
@@ -228,13 +217,6 @@ func JSONDataRespValidate(schemaFile string, configFile string) (jsonOutput []by
 			result.IsValid = true
 		} else {
 			for _, desc := range validated.Errors() {
-				/*
-					p.Printf("description: %v\n", desc.Description())
-					p.Printf("context: %v\n", desc.Type())
-					p.Printf("type: %v\n", desc.Context())
-					p.Printf("field: %v\n", desc.Field())
-					p.Printf("details: %v\n", desc.Details())
-				*/
 				e := errors.New(desc.String())
 				result.Exception = append(result.Exception, e.Error())
 			}
@@ -269,6 +251,14 @@ func Validate(schemaFile string, configFile string) (jsonOutput []byte, err erro
 	return JSONDataRespValidate(schemaFile, configFile)
 }
 
+func RegisterCustomFormatters() {
+	// extend the checker to handle CIDRs
+	gojsonschema.FormatCheckers.Add("cidr", CIDRFormatChecker{})
+
+	// extend the checker to handle symver
+	gojsonschema.FormatCheckers.Add("semver", SemVerFormatChecker{})
+}
+
 // validateCmd represents the validate command
 var validateCmd = &cobra.Command{
 	Use:   "validate",
@@ -292,14 +282,13 @@ var validateCmd = &cobra.Command{
 		return err
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		// extend the checker to handle CIDRs
-		gojsonschema.FormatCheckers.Add("cidr", CIDRFormatChecker{})
+		RegisterCustomFormatters()
 
-		// extend the checker to handle symver
-		gojsonschema.FormatCheckers.Add("semver", SemVerFormatChecker{})
-
-		jsonstr, err := JSONStrRespValidate(schemaFile, configFile)
-		fmt.Println(jsonstr)
+		if jsonstr, err := JSONStrRespValidate(schemaFile, configFile); err != nil {
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println(jsonstr)
+		}
 
 		return err
 	},

@@ -31,6 +31,7 @@ var configTestsDir string
 
 type (
 	testCase struct {
+		name       string
 		schema     string
 		config     string
 		jsonstring string
@@ -88,6 +89,9 @@ func TestTablesUsingYAML(t *testing.T) {
 		var test_case testCase
 		var validated Result
 
+		// And the name is
+		test_case.name = this_test.Name
+
 		// set default expectation.
 		test_case.expect = this_test.Expect
 
@@ -102,8 +106,14 @@ func TestTablesUsingYAML(t *testing.T) {
 		// Verify schema and config file for this test run exist
 		test_case.schema, test_case.config = confFiles(schema, config)
 
+		// register custom formatters
+		RegisterCustomFormatters()
+
 		// Run validation between schema and config
 		if jsondata, ok := Validate(schema, config); ok == nil {
+			common_out := "\n\tTest |    %-35s| %-30s\n\tConfig: `%s`\n\tSchema: `%s`.\n\tExpected: %-20v\n\tHad: %v\n"
+			with_error := "\tError(s): `%s`\n\n"
+
 			if err = json.Unmarshal(jsondata, &validated); err != nil {
 				t.Fatalf(err.Error())
 			}
@@ -112,12 +122,12 @@ func TestTablesUsingYAML(t *testing.T) {
 
 			if validated.IsValid == SuccessMap[this_test.Expect] {
 				test_case.success = true
-				t.Logf("config(%s) validated against schema(%s) SUCCEEDED: expected: %v   had: %v",
-					test_case.config, test_case.schema, test_case.expect, test_case.have)
+				t.Logf(common_out+"\n", test_case.name, "SUCCEEDED", test_case.config,
+					test_case.schema, test_case.expect, test_case.have)
 			} else {
 				test_case.success = false
-				t.Errorf("config(%s) validated against schema(%s) *FAILED*: expected: %v   had: %v   with_error(s): `%s`",
-					test_case.config, test_case.schema, test_case.expect, test_case.have, validated.Exception)
+				t.Errorf(common_out+with_error, test_case.name, "FAILED!!", test_case.config,
+					test_case.schema, test_case.expect, test_case.have, validated.Exception)
 			}
 		}
 	}
