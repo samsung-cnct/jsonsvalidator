@@ -55,17 +55,12 @@ type (
 )
 
 func confFiles(schema, config string) (string, string) {
-	if _, err := FileExists(schema); err == nil {
-		if _, err := FileExists(config); err == nil {
-			if err != nil {
-				fmt.Println(err.Error())
-				return "", ""
-			}
-		} else {
-			fmt.Println(err.Error())
-			return "", ""
-		}
-	} else {
+	if _, err := FileExists(schema); err != nil {
+		fmt.Println(err.Error())
+		return "", ""
+	}
+
+	if _, err := FileExists(config); err != nil {
 		fmt.Println(err.Error())
 		return "", ""
 	}
@@ -95,7 +90,7 @@ func TestTablesUsingYAML(t *testing.T) {
 		var validated Result
 
 		// set default expectation.
-		test_case.expect = ""
+		test_case.expect = this_test.Expect
 
 		cwd, err := os.Getwd()
 
@@ -106,7 +101,7 @@ func TestTablesUsingYAML(t *testing.T) {
 		config := filepath.Join(configTestsDir, this_test.Config)
 
 		// Verify schema and config file for this test run exist
-		schema, config = confFiles(schema, config)
+		test_case.schema, test_case.config = confFiles(schema, config)
 
 		// Run validation between schema and config
 		if jsondata, ok := Validate(schema, config); ok == nil {
@@ -118,6 +113,12 @@ func TestTablesUsingYAML(t *testing.T) {
 
 			if validated.IsValid == SuccessMap[this_test.Expect] {
 				test_case.success = true
+				t.Logf("config(%s) validated against schema(%s) SUCCEEDED: expected: %v   had: %v",
+					test_case.config, test_case.schema, test_case.expect, test_case.have)
+			} else {
+				test_case.success = false
+				t.Errorf("config(%s) validated against schema(%s) failed: expected: %v   had: %v   with_error(s): `%s`",
+					test_case.config, test_case.schema, test_case.expect, test_case.have, validated.Exception)
 			}
 		}
 	}
