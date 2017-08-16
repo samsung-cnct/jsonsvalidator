@@ -1,4 +1,4 @@
-.PHONY: all biuld-all build-app repo-warning-in clean-app clean vet clean-all lint test-all view-all-coverage
+.PHONY: all build-all build-app repo-warning-in clean-app clean vet clean-all lint test-all view-all-coverage
 #
 # This is the Makefile to build the golang components.
 # It is normally run in a docker container for golang builds.
@@ -9,13 +9,18 @@
 # https://hub.docker.com/_/golang/
 #
 # Vars for version and build
-VERSION ?= 1.0.0
 ARCH=$(shell uname -m)
 DIST=$(shell uname | tr [[:upper:]] [[:lower:]])
-BUILD=$(shell git rev-parse HEAD)
+
+# Need to work through this more thoroughly
+BUILD_HASH=$(shell git rev-parse HEAD)
+BUILD=$(shell git show-ref --tags -d | awk '{if ( "$1" ~ "'${BUILD_HASH}'" ) { print $1 }}')
+VERSION ?= $(shell git tag --contains ${BUILD})
+
+# grab the latest tagged build
 #
 # # -ldflasg to set vars
-LDFLAGS=-ldflags "-X jsonsvalidator/cmd.Version=${VERSION} -X jsonsvalidator/cmd.Build=${BUILD}"
+LDFLAGS=-ldflags "-X jsonsvalidator/cmd.Version=${VERSION} -X jsonsvalidator/cmd.Build=${BUILD_HASH}"
 #
 #
 IMAGE_NAME := jsonsvalidator
