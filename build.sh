@@ -46,21 +46,22 @@ function gexample::build::version {
 #
 # $1 = path to validate
 function gexample::build::validate_tree {
+  :
     #
     # validate the required source installation
     #
     #EXPECTED_BUILD_PATH="/src/github.com/samsung-cnct/golang-tools/example-project"
-    EXPECTED_BUILD_PATH="/src/github.com/notjames/jsonsvalidator"
-
-    if [ "${1}" != "${EXPECTED_BUILD_PATH}" ]; then
-        gexample::build::error "Expected build path ${EXPECTED_BUILD_PATH} not found."
-        gexample::build::error "Path ${1} found instead."
-        gexample::build::error "Your repo is not at the correct path."
-        gexample::build::error "See the README.md for the correct Directory Setup."
-        exit 2
-    else
-        gexample::build::info "Directory tree appears correct."
-    fi
+#    EXPECTED_BUILD_PATH="/src/github.com/samsung-cnct/jsonsvalidator"
+#
+#    if [ "${1}" != "${EXPECTED_BUILD_PATH}" ]; then
+#        gexample::build::error "Expected build path ${EXPECTED_BUILD_PATH} not found."
+#        gexample::build::error "Path ${1} found instead."
+#        gexample::build::error "Your repo is not at the correct path."
+#        gexample::build::error "See the README.md for the correct Directory Setup."
+#        exit 2
+#    else
+#        gexample::build::info "Directory tree appears correct."
+#    fi
 }
 
 # some best practice stuff
@@ -69,10 +70,13 @@ CR=$'\r'
 unset CDPATH
 
 # XXX: this won't work if the last component is a symlink
-my_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-git_dir=$( cd "$( dirname "${my_dir}/.." )" && pwd)
-go_dir=$( cd "$( dirname "${my_dir}/../../../../.." )" && pwd)
-build_dir=$( echo ${my_dir#$go_dir})
+[[ -z "$GOPATH" ]] && gexample::build::error "\$GOPATH is not set. Quitting"
+
+[[ -d .git ]] && git_dir=$(pwd) || \
+                 git_dir=$(find $(dirname $(pwd)) -type d -name .git)
+
+go_dir="$GOPATH/src"
+build_dir=$( echo ${git_dir#$go_dir})
 
 #
 gexample::build::info " "
@@ -94,7 +98,7 @@ gexample::build::validate_tree ${build_dir}
 # process args
 #
 MAKE_ARGS=""
-VERBOSE=0
+VERBOSE=1
 KUBE=0
 INTERACTIVE=0
 MAKEFILE_NAME="make.golang"
@@ -146,47 +150,47 @@ while [ "$1" != "" ]; do
 done
 MAKE_ARGS=$@
 
-gexample::build::info "VM: ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME} Verbose: $VERBOSE makefile: $MAKEFILE_NAME make_args: ${MAKE_ARGS} kubemake: $KUBE" 
+#gexample::build::info "VM: ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME} Verbose: $VERBOSE makefile: $MAKEFILE_NAME make_args: ${MAKE_ARGS} kubemake: $KUBE" 
 
-function gexample::build::machinecheck {
-    #
-    # check if docker is running locally already first (e.g. docker for os-x)
-    # if not, then check for docker-machine
-    # if not, then ask to install docker locallly or docker-machine
-    #
-    if [[ -z "$(which docker)" ]]; then
-        if [[ -z "$(which docker-machine)" ]]; then
-            gexample::build::info "Neither docker nor docker-machine is not found... please install one of them."
-            exit 1
-        elif [[ -n "$(which docker-machine)" ]]; then
-            gexample::build::info "docker-machine was found"
-            docker-machine inspect  "${DOCKER_MACHINE_NAME}" > /dev/null || {
-                gexample::build::info "Creating a docker-machine instance for build: ${DOCKER_MACHINE_NAME}"
-                docker-machine create --driver "${DOCKER_MACHINE_DRIVER}" "${DOCKER_MACHINE_NAME}" > /dev/null || {
-                gexample::build::error "Something went wrong creating a machine."
-                gexample::build::error "Try the following: "
-                gexample::build::error "docker-machine create -d ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME}"
-                return 1
-                } 
-            }
-        fi
-    else
-        DUMMY=$(docker info 2>/dev/null)
-        if [ $? -ne 0 ]; then
-            gexample::build::info "Docker is installed by not running.  Please run docker. And try your command again"
-            exit 1
-        else
-            # docker is running...we can use it
-            gexample::build::info "Docker is running, continuing."
-        fi
-    fi
-}
-
-gexample::build::machinecheck
-if [ $TEST_DOCKER == 1 ];then
-    gexample::build::info "Only Tested for Docker due to -t flag."
-    exit 0
-fi
+#function gexample::build::machinecheck {
+#    #
+#    # check if docker is running locally already first (e.g. docker for os-x)
+#    # if not, then check for docker-machine
+#    # if not, then ask to install docker locallly or docker-machine
+#    #
+#    if [[ -z "$(which docker)" ]]; then
+#        if [[ -z "$(which docker-machine)" ]]; then
+#            gexample::build::info "Neither docker nor docker-machine is not found... please install one of them."
+#            exit 1
+#        elif [[ -n "$(which docker-machine)" ]]; then
+#            gexample::build::info "docker-machine was found"
+#            docker-machine inspect  "${DOCKER_MACHINE_NAME}" > /dev/null || {
+#                gexample::build::info "Creating a docker-machine instance for build: ${DOCKER_MACHINE_NAME}"
+#                docker-machine create --driver "${DOCKER_MACHINE_DRIVER}" "${DOCKER_MACHINE_NAME}" > /dev/null || {
+#                gexample::build::error "Something went wrong creating a machine."
+#                gexample::build::error "Try the following: "
+#                gexample::build::error "docker-machine create -d ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME}"
+#                return 1
+#                } 
+#            }
+#        fi
+#    else
+#        DUMMY=$(docker info 2>/dev/null)
+#        if [ $? -ne 0 ]; then
+#            gexample::build::info "Docker is installed by not running.  Please run docker. And try your command again"
+#            exit 1
+#        else
+#            # docker is running...we can use it
+#            gexample::build::info "Docker is running, continuing."
+#        fi
+#    fi
+#}
+#
+#gexample::build::machinecheck
+#if [ $TEST_DOCKER == 1 ];then
+#    gexample::build::info "Only Tested for Docker due to -t flag."
+#    exit 0
+#fi
 #
 # run the Makefile to build
 #
@@ -213,24 +217,29 @@ function gexample::build::interactive {
         bash
 }
 
-function gexample::build::make {
-    gexample::build::info "Running Makefile: ${MAKEFILE_NAME} in ${GOLANG_CONTAINER}"
-    docker run \
-        --rm \
-        --name golang-build-container \
-        -v ${go_dir}:/go \
-        -w /go${build_dir} \
-        -e VERSION=${BUILD_VERSION} \
-        -e LOCAL_USER=$USER \
-        ${GOLANG_CONTAINER} \
-        bash -c "pwd;\
-        df;\
-        ls -l;\
-        env|sort;\
-        which make;\
-        whoami; \
-        make --version;\
-        make --file ${MAKEFILE_NAME} ${MAKE_ARGS};"
+#function gexample::build::make::orig {
+#    gexample::build::info "Running Makefile: ${MAKEFILE_NAME} in ${GOLANG_CONTAINER}"
+#    docker run \
+#        --rm \
+#        --name golang-build-container \
+#        -v ${go_dir}:/go \
+#        -w /go${build_dir} \
+#        -e VERSION=${BUILD_VERSION} \
+#        -e LOCAL_USER=$USER \
+#        ${GOLANG_CONTAINER} \
+#        bash -c "pwd;\
+#        df;\
+#        ls -l;\
+#        env|sort;\
+#        which make;\
+#        whoami; \
+#        make --version;\
+#        make --file ${MAKEFILE_NAME} ${MAKE_ARGS};"
+#}
+
+function gexample::build::make()
+{
+    make -C make.golang ${MAKE_ARGS}
 }
 
 function gexample::build::container {
