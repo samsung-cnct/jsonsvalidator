@@ -8,8 +8,11 @@
 # golog compile via docker container:
 # https://hub.docker.com/_/golang/
 #
+### this needs to be evaluated. See make.golang
 VERSION := 1.0.0
+
 DOCKER_IMAGE := jsonsvalidator
+
 #
 # do some repo evals... want everyone to use their own, unless building for the team
 #
@@ -50,5 +53,6 @@ repo-warning:
 # 
 %::
 	@echo "vars:$(MAKE):$(MAKECMDGOALS):$(MAKEFLAGS):$(ARGLIST)"
-	./build.sh -- $(MAKECMDGOALS) $(MAKEFLAGS) $(ARGLIST)
+	#./build.sh -- $(MAKECMDGOALS) $(MAKEFLAGS) $(ARGLIST)
+	./build.sh -- build-darwin
 

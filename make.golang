@@ -13,14 +13,13 @@ ARCH=$(shell uname -m)
 DIST=$(shell uname | tr [[:upper:]] [[:lower:]])
 
 # Need to work through this more thoroughly
-BUILD_HASH=$(shell git rev-parse HEAD)
-BUILD=$(shell git show-ref --tags -d | awk '{if ( "$1" ~ "'${BUILD_HASH}'" ) { print $1 }}')
-VERSION ?= $(shell git tag --contains ${BUILD})
+BUILD=$(shell git rev-parse HEAD)
+VERSION=$(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
 
 # grab the latest tagged build
 #
 # # -ldflasg to set vars
-LDFLAGS=-ldflags "-X jsonsvalidator/cmd.Version=${VERSION} -X jsonsvalidator/cmd.Build=${BUILD_HASH}"
+LDFLAGS=-ldflags "-X jsonsvalidator/cmd.Version=${VERSION} -X jsonsvalidator/cmd.Build=${BUILD}"
 #
 #
 IMAGE_NAME := jsonsvalidator
