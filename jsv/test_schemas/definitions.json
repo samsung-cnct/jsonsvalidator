@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://judkins.house/apis/k2/v1/definitions.json",
+  "$$target": "definitions.json",
+  "title": "Definitions",
+  "description": "A dict containing JSON snippets which are referenced within the config for clarity or brevity.",
+
+  "properties": {
+    "cidr": {
+      "title": "CIDR",
+      "description": "Version used for the validation.",
+      "format": "cidr",
+      "type": "string"
+    },
+    "version": {
+      "title": "semantic versioning",
+      "description": "Version used for the validation.",
+      "format": "semver",
+      "type": "string"
+    },
+    "site": {
+      "title": "URIs",
+      "description": "Location of the Kubernetes container.",
+      "format": "uri",
+      "type": "string"
+    }
+  },
+
+  "//": "Nothing is required. The administrator can choose not to declare a definitions stanza.",
+
+  "type": "object"
+}

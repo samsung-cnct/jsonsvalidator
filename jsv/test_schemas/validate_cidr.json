@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "validate_cidr.json",
+  "$$target": "validate_cidr.json",
+  "title": "Validate semver (semantics version)",
+  "description": "Validation schema for jsonsvalidator to check if cidr is valid.",
+
+  "properties": {
+    "cidr": {
+      "description": "Version used for the validation.",
+      "format": "cidr",
+      "type": "string"
+    }
+  },
+
+  "required": [
+    "cidr"
+  ],
+
+  "type": "object"
+}

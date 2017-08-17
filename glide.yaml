@@ -1,0 +1,12 @@
+---
+package: .
+import:
+  - package: github.com/ghodss/yaml
+  - package: github.com/notjames/jsonsvalidator
+subpackages:
+  - cmd
+  - package: github.com/kr/pretty
+  - package: github.com/spf13/cobra
+  - package: github.com/spf13/pflag
+  - package: github.com/spf13/viper
+  - package: github.com/xeipuuv/gojsonschema

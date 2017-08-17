@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://judkins.house/apis/k2/v1/definitions.json",
+  "$$target": "definitions.json",
+  "title": "Definitions",
+  "description": "A dict containing JSON snippets which are referenced within the config for clarity or brevity.",
+
+  "properties": {
+    "helmConfigs": {
+      "title": "Helm configurations",
+      "description": "A list of Helm configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "helmConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "fabricConfigs": {
+      "title": "Fabric configurations",
+      "description": "A list of fabric configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "fabricConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "loadBalancerConfigs": {
+      "title": "Load Balancer configurations",
+      "description": "A list of Load Balancer configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "loadBalancerConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "kvStoreConfigs": {
+      "title": "kvStore configurations",
+      "description": "A list of kvStore (e.g. etcd) configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "kvStoreConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "apiServerConfigs": {
+      "title": "API server configurations",
+      "description": "A list of API server configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "apiServerConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "bastionConfigs": {
+      "title": "Bastion configurations",
+      "description": "A list of bastion configurations within the configuration file.",
+      "items": {
+        "$ref": "bastionConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "kubeConfigs": {
+      "title": "Kubernetes configurations",
+      "description": "A list of Kubernetes configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "kubeConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "containerConfigs": {
+      "title": "Container configurations",
+      "description": "A list of container configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "containerConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "osConfigs": {
+      "title": "OS configurations",
+      "description": "A list of OS configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "osConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "nodeConfigs": {
+      "title": "Node configurations",
+      "description": "A list of (provider specific) node configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "nodeConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "providerConfigs": {
+      "title": "Provider configurations",
+      "description": "A list of provider (e.g. AWS, GKE, etc.) configurations referenced within the configuration file.",
+      "items": {
+        "$ref": "providerConfig.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "keyPairs": {
+      "title": "Key pairs",
+      "description": "A list of key pairs referenced within the configuration file.",
+      "items": {
+        "$ref": "keyPair.json"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "cidr": {
+      "title": "CIDR",
+      "description": "Version used for the validation.",
+      "format": "cidr",
+      "type": "string"
+    },
+    "version": {
+      "title": "semantic versioning",
+      "description": "Version used for the validation.",
+      "format": "semver",
+      "type": "string"
+    },
+    "site": {
+      "title": "URIs",
+      "description": "Location of the Kubernetes container.",
+      "format": "uri",
+      "type": "string"
+    }
+  },
+
+  "//": "Nothing is required. The administrator can choose not to declare a definitions stanza.",
+
+  "type": "object"
+}
