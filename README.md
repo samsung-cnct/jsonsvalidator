@@ -13,7 +13,7 @@
 3. According to the author's observations, the library which does the actual
    validation ignores `$ref`s during validation if a schema file is used for
    validation. Currently, this application only recognizes validation by 
-   local file.
+   local schema file.
 
 ## Build process
 `$ make all`
