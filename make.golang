@@ -19,7 +19,9 @@ VERSION=$(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
 # grab the latest tagged build
 #
 # # -ldflasg to set vars
+# currently hard coded. XXX need to variablizE it for portability
 LDFLAGS=-ldflags "-X jsonsvalidator/cmd.Version=${VERSION} -X jsonsvalidator/cmd.Build=${BUILD}"
+
 #
 #
 IMAGE_NAME := jsonsvalidator
@@ -66,7 +68,7 @@ build-app: repo-warning-in vet
 # for local os-x app run only
 #
 build-darwin: repo-warning-in vet
-	env GOOS=$(DIST) GOARCH=$(ARCH) go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH) main.go
+	env GOOS=darwin GOARCH=$(ARCH) go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH) main.go
 
 #
 # dev testing
