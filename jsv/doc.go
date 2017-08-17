@@ -41,4 +41,4 @@ FAQ:
 	A. Yes. Simply specifying the YAML config instead of a JSON config will succeed.
 */
 
-package cmd
+package jsv
