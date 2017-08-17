@@ -53,6 +53,5 @@ repo-warning:
 # 
 %::
 	@echo "vars:$(MAKE):$(MAKECMDGOALS):$(MAKEFLAGS):$(ARGLIST)"
-	#./build.sh -- $(MAKECMDGOALS) $(MAKEFLAGS) $(ARGLIST)
-	./build.sh -- build-darwin
+	./build.sh -- $(MAKECMDGOALS) $(MAKEFLAGS) $(ARGLIST)
 

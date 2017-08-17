@@ -25,7 +25,7 @@ import (
 	y "gopkg.in/yaml.v2"
 )
 
-var testYAML string = "./tests.yaml"
+var testYAML = "./tests.yaml"
 var schemaTestsDir string
 var configTestsDir string
 
@@ -71,8 +71,8 @@ func confFiles(schema, config string) (string, string) {
 func TestTablesUsingYAML(t *testing.T) {
 	var config YAMLConf
 
-	my_yaml, _ := ioutil.ReadFile(testYAML)
-	err := y.Unmarshal(my_yaml, &config)
+	myYAML, _ := ioutil.ReadFile(testYAML)
+	err := y.Unmarshal(myYAML, &config)
 
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -80,54 +80,54 @@ func TestTablesUsingYAML(t *testing.T) {
 
 	schemaTestsDir = config.SchemasDir
 	configTestsDir = config.ConfigsDir
-	tests_to_run := config.Tests
+	testsToRun := config.Tests
 
 	SuccessMap := map[string]bool{"success": true, "fail": false}
 	SuccessMapRev := map[bool]string{true: "success", false: "fail"}
 
-	for _, this_test := range tests_to_run {
-		var test_case testCase
+	for _, thisTest := range testsToRun {
+		var testCase testCase
 		var validated Result
 
 		// And the name is
-		test_case.name = this_test.Name
+		testCase.name = thisTest.Name
 
 		// set default expectation.
-		test_case.expect = this_test.Expect
+		testCase.expect = thisTest.Expect
 
 		cwd, err := os.Getwd()
 
 		// Schemas require absolute path
-		schema := filepath.Join(cwd, schemaTestsDir, this_test.Schema)
+		schema := filepath.Join(cwd, schemaTestsDir, thisTest.Schema)
 
 		// Configs do not
-		config := filepath.Join(configTestsDir, this_test.Config)
+		config := filepath.Join(configTestsDir, thisTest.Config)
 
 		// Verify schema and config file for this test run exist
-		test_case.schema, test_case.config = confFiles(schema, config)
+		testCase.schema, testCase.config = confFiles(schema, config)
 
 		// register custom formatters
 		RegisterCustomFormatters()
 
 		// Run validation between schema and config
 		if jsondata, ok := Validate(schema, config); ok == nil {
-			common_out := "\n\tTest |    %-35s| %-30s\n\tConfig: `%s`\n\tSchema: `%s`.\n\tExpected: %-20v\n\tHad: %v\n"
-			with_error := "\tError(s): `%s`\n\n"
+			commonOutStr := "\n\tTest |    %-35s| %-30s\n\tConfig: `%s`\n\tSchema: `%s`.\n\tExpected: %-20v\n\tHad: %v\n"
+			commonOutErr := "\tError(s): `%s`\n\n"
 
 			if err = json.Unmarshal(jsondata, &validated); err != nil {
 				t.Fatalf(err.Error())
 			}
 
-			test_case.have = SuccessMapRev[validated.IsValid]
+			testCase.have = SuccessMapRev[validated.IsValid]
 
-			if validated.IsValid == SuccessMap[this_test.Expect] {
-				test_case.success = true
-				t.Logf(common_out+"\n", test_case.name, "SUCCEEDED", test_case.config,
-					test_case.schema, test_case.expect, test_case.have)
+			if validated.IsValid == SuccessMap[thisTest.Expect] {
+				testCase.success = true
+				t.Logf(commonOutStr+"\n", testCase.name, "SUCCEEDED", testCase.config,
+					testCase.schema, testCase.expect, testCase.have)
 			} else {
-				test_case.success = false
-				t.Errorf(common_out+with_error, test_case.name, "FAILED!!", test_case.config,
-					test_case.schema, test_case.expect, test_case.have, validated.Exception)
+				testCase.success = false
+				t.Errorf(commonOutStr+commonOutErr, testCase.name, "FAILED!!", testCase.config,
+					testCase.schema, testCase.expect, testCase.have, validated.Exception)
 			}
 		}
 	}

@@ -60,7 +60,7 @@ function gexample::build::validate_tree {
     # validate the required source installation
     #
     #EXPECTED_BUILD_PATH="/src/github.com/samsung-cnct/golang-tools/example-project"
-    EXPECTED_BUILD_PATH="$GOPATH/src/jsonsvalidator"
+    EXPECTED_BUILD_PATH="/jsonsvalidator"
 
     if [ "${1}" != "${EXPECTED_BUILD_PATH}" ]; then
         gexample::build::error "Expected build path ${EXPECTED_BUILD_PATH} not found."
@@ -73,41 +73,43 @@ function gexample::build::validate_tree {
     fi
 }
 
-# XXX: this won't work if the last component is a symlink
-[[ -z "$GOPATH" ]] && gexample::build::error "\$GOPATH is not set. Quitting"
+function gexample::build::machinecheck {
+    #
+    # check if docker is running locally already first (e.g. docker for os-x)
+    # if not, then check for docker-machine
+    # if not, then ask to install docker locallly or docker-machine
+    #
+    if [[ -z "$(which docker)" ]]; then
+        if [[ -z "$(which docker-machine)" ]]; then
+            gexample::build::info "Neither docker nor docker-machine is not found... please install one of them."
+            exit 1
+        elif [[ -n "$(which docker-machine)" ]]; then
+            gexample::build::info "docker-machine was found"
+            docker-machine inspect  "${DOCKER_MACHINE_NAME}" > /dev/null || {
+                gexample::build::info "Creating a docker-machine instance for build: ${DOCKER_MACHINE_NAME}"
+                docker-machine create --driver "${DOCKER_MACHINE_DRIVER}" "${DOCKER_MACHINE_NAME}" > /dev/null || {
+                gexample::build::error "Something went wrong creating a machine."
+                gexample::build::error "Try the following: "
+                gexample::build::error "docker-machine create -d ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME}"
+                return 1
+                } 
+            }
+        fi
+    else
+        DUMMY=$(docker info 2>/dev/null)
+        if [ $? -ne 0 ]; then
+            gexample::build::info "Docker is installed by not running.  Please run docker. And try your command again"
+            exit 1
+        else
+            # docker is running...we can use it
+            gexample::build::info "Docker is running, continuing."
+        fi
+    fi
+}
 
-[[ -d .git ]] && git_dir=$(pwd) || \
-                 git_dir=$(find $(dirname $(pwd)) -type d -name .git)
-
-go_dir="$GOPATH/src"
-build_dir=$git_dir
-
-gexample::build::info " "
-gexample::build::info "=================================================="
-gexample::build::info "   gexample golang build script via container"
-gexample::build::info "   version: ${SCRIPT_VERSION}"
-gexample::build::info "=================================================="
-gexample::build::info "go_dir ${go_dir} "
-gexample::build::info "git_dir ${git_dir} "
-gexample::build::info "build_dir ${build_dir} "
-
-#
-# validate the source tree setup
-gexample::build::validate_tree ${build_dir}
-
-#----------------------
-# start the services first...this is so the ENV vars are available to the pods
-#----------------------
-#
-# process args
-#
-MAKE_ARGS=""
-VERBOSE=1
-KUBE=0
-INTERACTIVE=0
-MAKEFILE_NAME="make.golang"
-DOCKER_MACHINE_NAME=${DOCKER_MACHINE_NAME:-"gexample-build"}
-TEST_DOCKER=0
+## ********************************
+## Main code
+## ********************************
 
 # not set via args
 readonly DOCKER_MACHINE_DRIVER=${DOCKER_MACHINE_DRIVER:-"virtualbox"}
@@ -155,41 +157,42 @@ while [ "$1" != "" ]; do
 done
 MAKE_ARGS=$@
 
-gexample::build::info "VM: ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME} Verbose: $VERBOSE makefile: $MAKEFILE_NAME make_args: ${MAKE_ARGS} kubemake: $KUBE" 
+# XXX: this won't work if the last component is a symlink
+[[ -z "$GOPATH" ]] && gexample::build::error "\$GOPATH is not set. Quitting"
 
-function gexample::build::machinecheck {
-    #
-    # check if docker is running locally already first (e.g. docker for os-x)
-    # if not, then check for docker-machine
-    # if not, then ask to install docker locallly or docker-machine
-    #
-    if [[ -z "$(which docker)" ]]; then
-        if [[ -z "$(which docker-machine)" ]]; then
-            gexample::build::info "Neither docker nor docker-machine is not found... please install one of them."
-            exit 1
-        elif [[ -n "$(which docker-machine)" ]]; then
-            gexample::build::info "docker-machine was found"
-            docker-machine inspect  "${DOCKER_MACHINE_NAME}" > /dev/null || {
-                gexample::build::info "Creating a docker-machine instance for build: ${DOCKER_MACHINE_NAME}"
-                docker-machine create --driver "${DOCKER_MACHINE_DRIVER}" "${DOCKER_MACHINE_NAME}" > /dev/null || {
-                gexample::build::error "Something went wrong creating a machine."
-                gexample::build::error "Try the following: "
-                gexample::build::error "docker-machine create -d ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME}"
-                return 1
-                } 
-            }
-        fi
-    else
-        DUMMY=$(docker info 2>/dev/null)
-        if [ $? -ne 0 ]; then
-            gexample::build::info "Docker is installed by not running.  Please run docker. And try your command again"
-            exit 1
-        else
-            # docker is running...we can use it
-            gexample::build::info "Docker is running, continuing."
-        fi
-    fi
-}
+[[ -d .git ]] && project_git_dir=$(pwd) || \
+                 project_git_dir=$(find $(dirname $(pwd)) -type d -name .git)
+
+go_dir="$GOPATH/src"
+build_dir=${project_git_dir#$go_dir}
+
+gexample::build::info " "
+gexample::build::info "=================================================="
+gexample::build::info "   gexample golang build script via container"
+gexample::build::info "   version: ${SCRIPT_VERSION}"
+gexample::build::info "=================================================="
+gexample::build::info "go_dir ${go_dir} "
+gexample::build::info "project_git_dir ${project_git_dir} "
+gexample::build::info "build_dir $build_dir"
+
+# validate the source tree setup
+gexample::build::validate_tree ${build_dir}
+
+#----------------------
+# start the services first...this is so the ENV vars are available to the pods
+#----------------------
+#
+# process args
+#
+#MAKE_ARGS=""
+VERBOSE=1
+KUBE=0
+INTERACTIVE=0
+MAKEFILE_NAME="make.golang"
+DOCKER_MACHINE_NAME=${DOCKER_MACHINE_NAME:-"gexample-build"}
+TEST_DOCKER=0
+
+gexample::build::info "VM: ${DOCKER_MACHINE_DRIVER} ${DOCKER_MACHINE_NAME} Verbose: $VERBOSE makefile: $MAKEFILE_NAME make_args: ${MAKE_ARGS} kubemake: $KUBE" 
 
 gexample::build::machinecheck
 if [ $TEST_DOCKER == 1 ];then
@@ -211,8 +214,8 @@ function gexample::build::interactive {
         --rm \
         -it \
         --name golang-build-container \
-        -v ${go_dir}:/go \
-        -w /go${build_dir} \
+        -v ${GOPATH}:/go \
+        -w /go/src${build_dir} \
         -e VERSION=${BUILD_VERSION} \
         -e LOCAL_USER=$USER \
         ${GOLANG_CONTAINER} \
@@ -224,8 +227,8 @@ function gexample::build::make {
     docker run \
         --rm \
         --name golang-build-container \
-        -v ${go_dir}:/go \
-        -w /go${build_dir} \
+        -v ${GOPATH}:/go \
+        -w /go/src${build_dir} \
         -e VERSION=${BUILD_VERSION} \
         -e LOCAL_USER=$USER \
         ${GOLANG_CONTAINER} \
@@ -240,14 +243,8 @@ function gexample::build::make {
      exit
 }
 
-#function gexample::build::make()
-#{
-#    make -f make.golang ${MAKE_ARGS}
-#}
-
 function gexample::build::container {
     gexample::build::info "Running Makefile: ${MAKEFILE_NAME} in current shell"
-    echo $MAKE_ARGS
     make -C ./_containerize  ${MAKE_ARGS}
 }
 

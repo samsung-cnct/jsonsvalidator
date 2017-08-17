@@ -45,7 +45,7 @@ type Result struct {
 // CIDRFormatChecker struct to extend gojsonschema FormatCheckers
 type CIDRFormatChecker struct{}
 
-// SemverFormatChecker struct to extend gojsonschema FormatCheckers
+// SemVerFormatChecker struct to extend gojsonschema FormatCheckers
 type SemVerFormatChecker struct{}
 
 // NewResult initializes Result with default values.
@@ -121,13 +121,14 @@ func (f CIDRFormatChecker) IsFormat(input string) (validCIDR bool) {
 // extending gojsonschema.FormatChecker
 // https://github.com/xeipuuv/gojsonschema
 func (f SemVerFormatChecker) IsFormat(input string) (validSemVer bool) {
+	goodSemVer := false
 	_, ok := semver.Make(input)
 
-	if ok != nil {
-		return false
+	if ok == nil {
+		goodSemVer = true
 	}
 
-	return true
+	return goodSemVer
 }
 
 // JSONDataRespValidate will is the main function that performs validation. However,
@@ -175,17 +176,17 @@ func JSONDataRespValidate(schemaFile string, configFile string) (jsonOutput []by
 func JSONStrRespValidate(schemaFile string, configFile string) (jsonOutput string, err error) {
 	if jsonResponse, err := Validate(schemaFile, configFile); err == nil {
 		return string(jsonResponse), err
-	} else {
-		result := NewResult()
-		result.Config = (configFile)
-		result.Schema = (schemaFile)
-		result.IsValid = false
-		result.Exception = append(result.Exception, err.Error())
-
-		errResult, err := json.Marshal(result)
-
-		return string(errResult), err
 	}
+
+	result := NewResult()
+	result.Config = (configFile)
+	result.Schema = (schemaFile)
+	result.IsValid = false
+	result.Exception = append(result.Exception, err.Error())
+
+	errResult, err := json.Marshal(result)
+
+	return string(errResult), err
 }
 
 // Validate is simply a method alias which points to JSONDataRespValidate making
@@ -195,6 +196,8 @@ func Validate(schemaFile string, configFile string) (jsonOutput []byte, err erro
 	return JSONDataRespValidate(schemaFile, configFile)
 }
 
+// RegisterCustomFormatters initializes any custom formatters for jsongoschema to
+// validate our special JSON types.
 func RegisterCustomFormatters() {
 	// extend the checker to handle CIDRs
 	gojsonschema.FormatCheckers.Add("cidr", CIDRFormatChecker{})
@@ -203,6 +206,7 @@ func RegisterCustomFormatters() {
 	gojsonschema.FormatCheckers.Add("semver", SemVerFormatChecker{})
 }
 
+// DoValidate is the entry point into validating JSON documents
 func DoValidate(schemaFile, configFile string) (err error) {
 	RegisterCustomFormatters()
 

@@ -9,7 +9,7 @@
 # https://hub.docker.com/_/golang/
 #
 # Vars for version and build
-ARCH=$(shell uname -m)
+ARCH=amd64
 DIST=$(shell uname | tr [[:upper:]] [[:lower:]])
 
 # Need to work through this more thoroughly
@@ -27,8 +27,11 @@ IMAGE_NAME := jsonsvalidator
 #
 # avoid checking etc the vendor dir
 #
-NOVENDOR := $(shell glide novendor)
+### XXX broken for now. Glide is not found. Likely due to how volume is mounted.
+#NOVENDOR := $(shell glide novendor)
+
 PKGS := "./cmd ./jsv"
+
 #
 # find the certs.  use the first location found
 #
@@ -47,17 +50,15 @@ repo-warning-in:
 	@ls -l $(GOPATH)
 	@env | sort
 
-all:  test
+all:  test build-all
 
 build-all: build-app  build-darwin
 
 #------------------------------------------
 # Target for real container build
 #
-build-app: repo-warning-in  $(CONTAINER_PATH)/$(IMAGE_NAME)-linux
-	
-$(CONTAINER_PATH)/$(DOCKER_IAMGE)-linux: vet main.go
-	env CGO_ENABLED=0 GOOS=linux go build -v $(LDFLAGS) -o $@ main.go
+build-app: repo-warning-in vet
+	env CGO_ENABLED=0 GOOS=$(DIST) GOARCH=$(ARCH) go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-${DIST}-${ARCH} main.go
 
 #
 #------------------------------------------
@@ -65,8 +66,7 @@ $(CONTAINER_PATH)/$(DOCKER_IAMGE)-linux: vet main.go
 # for local os-x app run only
 #
 build-darwin: repo-warning-in vet
-	env GOOS=$(DIST) GOARCH=amd64 go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH) main.go
-	ln -fs $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH) $(GOPATH)/bin/$(IMAGE_NAME)
+	env GOOS=$(DIST) GOARCH=$(ARCH) go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH) main.go
 
 #
 # dev testing
@@ -107,9 +107,10 @@ doc:
 
 lint:
 	go get github.com/golang/lint/golint
-	#go get -u honnef.co/go/tools/cmd/...
-	#go get -u honnef.co/go/tools/simple
-	go get -u github.com/dominikh/go-tools/...
+	go get -u honnef.co/go/tools/cmd/...
+	go get -u honnef.co/go/tools/simple
+	# get all deps
+	go get
 	golint $(NOVENDOR)
 	gosimple $(NOVENDOR)
 
@@ -120,6 +121,6 @@ clean-all: clean-app
 
 clean-app:
 	-rm $(GOPATH)/bin/$(IMAGE_NAME)
-	-rm $(GOPATH)/bin/$(IMAGE_NAME)-linux
-	-rm $(GOPATH)/bin/$(IMAE_NAME)-darwin-amd64
+	-rm $(GOPATH)/bin/$(IMAGE_NAME)-${DIST}-${ARCH}
+	-rm $(GOPATH)/bin/$(IMAGE_NAME)-darwin-${ARCH}
 
