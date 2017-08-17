@@ -16,9 +16,7 @@
    local file.
 
 ## Build process
-Currently still manual IE:
-
-`$ go build -o jsonsvalidator main.go`
+`$ make all`
 
 ## TODO
 1. Update so that remote schemas IE URLs can be used for validation.
