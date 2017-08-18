@@ -13,12 +13,10 @@
 3. According to the author's observations, the library which does the actual
    validation ignores `$ref`s during validation if a schema file is used for
    validation. Currently, this application only recognizes validation by 
-   local file.
+   local schema file.
 
 ## Build process
-Currently still manual IE:
-
-`$ go build -o jsonsvalidator main.go`
+`$ make all`
 
 ## TODO
 1. Update so that remote schemas IE URLs can be used for validation.
@@ -35,4 +33,11 @@ Currently still manual IE:
 
 [Semantic Version Library (spec ver. 2.0.0 compliant)](https://github.com/blang/semver)
 
-## More to come
+## Maintainer Versioning
+This may change IE it's experimental. In order to bump the version on this app one must
+tag a commit to the version one wants:
+
+1. git commit -am 'some message here'
+2. git tag x.x.x-foo OR some other valid semantic in conformance with semver 2.0.0 (semver.org)
+3. The build will automatically add the build date, hash, and other details into the binary so
+   `app version` reflects the proper information
