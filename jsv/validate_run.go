@@ -21,10 +21,8 @@ import (
 	"net"
 	"os"
 
-	"io/ioutil"
-
 	"github.com/blang/semver"
-	"github.com/ghodss/yaml"
+	s "github.com/davecgh/go-spew/spew"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -59,47 +57,22 @@ func NewResult() Result {
 	return result
 }
 
-// FileContentsNormalizer injests a file, reads the contents, & returns
-// the content in JSON. It can take YAML or JSON data. If it's JSON,
-// it's just returned. If it's YAML, it's validated, JSONized, and
-// then returned. If the YAML is not valid then the application
-// exits with an error.
-func FileContentsNormalizer(configFile string) (jsonContents []byte, err error) {
-	var fileContents []byte
-
-	fileContents, err = ioutil.ReadFile(configFile)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if isJSON(fileContents) {
-		return fileContents, nil
-	}
-
-	if jsonContents, err = yaml.YAMLToJSON(fileContents); err != nil {
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return jsonContents, nil
-}
-
-func isJSON(b []byte) bool {
-	var js interface{}
-	return json.Unmarshal(b, &js) == nil
-}
-
 // FileExists check if a file exists on the system
-func FileExists(name string) (exists bool, err error) {
-	if _, err := os.Stat(name); err != nil {
+func FileExists(name string) (isValid bool, err error) {
+	isValid = true
+
+	if file, err := os.Stat(name); err != nil {
 		if os.IsNotExist(err) {
-			return false, err
+			isValid = false
+		}
+	} else {
+		if file.IsDir() {
+			err = errors.New("Invalid file specified. File is a directory, not a file.")
+			isValid = false
 		}
 	}
 
-	return true, err
+	return isValid, err
 }
 
 // IsFormat for CIDRFormatChecker - custom format checker for CIDRs
@@ -134,28 +107,25 @@ func (f SemVerFormatChecker) IsFormat(input string) (validSemVer bool) {
 // JSONDataRespValidate will is the main function that performs validation. However,
 // this function always returns a data structure `result` of type struct containing
 // data for the validation.
-func JSONDataRespValidate(schemaFile string, configFile string) (jsonOutput []byte, err error) {
-	result := NewResult()
-	result.Config = (configFile)
-	result.Schema = (schemaFile)
-	fexists, err := FileExists(configFile)
-
-	if fexists {
-		jsonData, err = FileContentsNormalizer(configFile)
-
-		if err != nil {
-			return nil, err
-		}
-	} else if err != nil {
+func JSONDataRespValidate(schemaFile, configFile string) (jsonOutput []byte, err error) {
+	if _, err := FileExists(configFile); err != nil {
 		return nil, err
 	}
 
-	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaFile)
-	documentLoader := gojsonschema.NewBytesLoader(jsonData)
+	if _, err := FileExists(schemaFile); err != nil {
+		return nil, err
+	}
 
+	documentLoader := gojsonschema.NewReferenceLoader("file://" + configFile)
+	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaFile)
 	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
 
+	result := NewResult()
+	result.Config = (configFile)
+	result.Schema = (schemaFile)
+
 	if err != nil {
+		s.Dump(err)
 		result.Exception = append(result.Exception, err.Error())
 	} else {
 		if validated.Valid() {
@@ -173,17 +143,18 @@ func JSONDataRespValidate(schemaFile string, configFile string) (jsonOutput []by
 
 // JSONStrRespValidate calls JSONDataRespValidate() and marshalls the JSON response to
 // a string returning the string to the caller.
-func JSONStrRespValidate(schemaFile string, configFile string) (jsonOutput string, err error) {
-	if jsonResponse, err := Validate(schemaFile, configFile); err == nil {
-		return string(jsonResponse), err
-	}
-
+func JSONStrRespValidate(schemaFile, configFile string) (jsonOutput string, err error) {
+	jsonResponse, err := Validate(schemaFile, configFile)
 	result := NewResult()
 	result.Config = (configFile)
 	result.Schema = (schemaFile)
 	result.IsValid = false
-	result.Exception = append(result.Exception, err.Error())
 
+	if err == nil {
+		return string(jsonResponse), err
+	}
+
+	result.Exception = append(result.Exception, err.Error())
 	errResult, err := json.Marshal(result)
 
 	return string(errResult), err
@@ -192,7 +163,7 @@ func JSONStrRespValidate(schemaFile string, configFile string) (jsonOutput strin
 // Validate is simply a method alias which points to JSONDataRespValidate making
 // `Validate` by default return a go data structure to the caller. If one wants
 // to get a JSON string returned explicitly then one must call `JSONStrRespValidate()`
-func Validate(schemaFile string, configFile string) (jsonOutput []byte, err error) {
+func Validate(schemaFile, configFile string) (jsonOutput []byte, err error) {
 	return JSONDataRespValidate(schemaFile, configFile)
 }
 
