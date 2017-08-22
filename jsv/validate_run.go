@@ -22,7 +22,7 @@ import (
 	"os"
 
 	"github.com/blang/semver"
-	s "github.com/davecgh/go-spew/spew"
+	//s "github.com/davecgh/go-spew/spew"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -67,7 +67,7 @@ func FileExists(name string) (isValid bool, err error) {
 		}
 	} else {
 		if file.IsDir() {
-			err = errors.New("Invalid file specified. File is a directory, not a file.")
+			err = errors.New("Invalid file specified. Requested file is a directory, not a file.")
 			isValid = false
 		}
 	}
@@ -125,7 +125,7 @@ func JSONDataRespValidate(schemaFile, configFile string) (jsonOutput []byte, err
 	result.Schema = (schemaFile)
 
 	if err != nil {
-		s.Dump(err)
+		//s.Dump(err)
 		result.Exception = append(result.Exception, err.Error())
 	} else {
 		if validated.Valid() {
