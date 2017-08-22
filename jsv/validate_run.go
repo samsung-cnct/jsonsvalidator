@@ -32,19 +32,21 @@ var (
 	jsonData   []byte
 )
 
-// Result is the structure containing the validation results from JSON schema validation
-type Result struct {
-	IsValid   bool     `json:"is_valid"`
-	Exception []string `json:"exception"`
-	Config    string   `json:"config"`
-	Schema    string   `json:"schema"`
-}
+type (
+	// Result is the structure containing the validation results from JSON schema validation
+	Result struct {
+		IsValid   bool     `json:"is_valid"`
+		Exception []string `json:"exception"`
+		Config    string   `json:"config"`
+		Schema    string   `json:"schema"`
+	}
 
-// CIDRFormatChecker struct to extend gojsonschema FormatCheckers
-type CIDRFormatChecker struct{}
+	// CIDRFormatChecker struct to extend gojsonschema FormatCheckers
+	CIDRFormatChecker struct{}
 
-// SemVerFormatChecker struct to extend gojsonschema FormatCheckers
-type SemVerFormatChecker struct{}
+	// SemVerFormatChecker struct to extend gojsonschema FormatCheckers
+	SemVerFormatChecker struct{}
+)
 
 // NewResult initializes Result with default values.
 func NewResult() Result {
