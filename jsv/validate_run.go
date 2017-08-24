@@ -18,10 +18,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 
 	"github.com/blang/semver"
+	"github.com/ghodss/yaml"
 	//s "github.com/davecgh/go-spew/spew"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -35,10 +37,15 @@ var (
 type (
 	// Result is the structure containing the validation results from JSON schema validation
 	Result struct {
-		IsValid   bool     `json:"is_valid"`
-		Exception []string `json:"exception"`
-		Config    string   `json:"config"`
-		Schema    string   `json:"schema"`
+		IsValid    bool              `json:"is_valid"`
+		Exceptions []ExceptionDetail `json:"exception"`
+		Config     string            `json:"config"`
+		Schema     string            `json:"schema"`
+	}
+
+	ExceptionDetail struct {
+		ErrorString string `json:"error_string"`
+		Path        string `json:"path"`
 	}
 
 	// CIDRFormatChecker struct to extend gojsonschema FormatCheckers
@@ -48,15 +55,55 @@ type (
 	SemVerFormatChecker struct{}
 )
 
+func NewExceptionDetail() ExceptionDetail {
+	detail := ExceptionDetail{}
+	detail.ErrorString = ""
+	detail.Path = ""
+
+	return detail
+}
+
 // NewResult initializes Result with default values.
 func NewResult() Result {
 	result := Result{}
 	result.IsValid = false
 	result.Config = ""
-	result.Exception = nil
+	result.Exceptions = nil
 	result.Schema = ""
 
 	return result
+}
+
+// FileContentsNormalizer injests a file, reads the contents, & returns
+// the content in JSON. It can take YAML or JSON data. If it's JSON,
+// it's just returned. If it's YAML, it's validated, JSONized, and
+// then returned. If the YAML is not valid then the application
+// exits with an error.
+func FileContentsNormalizer(configFile string) (jsonContents []byte, err error) {
+	var fileContents []byte
+
+	fileContents, err = ioutil.ReadFile(configFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if isJSON(fileContents) {
+		return fileContents, nil
+	}
+
+	if jsonContents, err = yaml.YAMLToJSON(fileContents); err != nil {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return jsonContents, nil
+}
+
+func isJSON(b []byte) bool {
+	var js interface{}
+	return json.Unmarshal(b, &js) == nil
 }
 
 // FileExists check if a file exists on the system
@@ -69,7 +116,7 @@ func FileExists(name string) (isValid bool, err error) {
 		}
 	} else {
 		if file.IsDir() {
-			err = errors.New("Invalid file specified. Requested file is a directory, not a file.")
+			err = errors.New("invalid file specified; requested file is a directory, not a file")
 			isValid = false
 		}
 	}
@@ -118,9 +165,17 @@ func JSONDataRespValidate(schemaFile, configFile string) (jsonOutput []byte, err
 		return nil, err
 	}
 
-	documentLoader := gojsonschema.NewReferenceLoader("file://" + configFile)
+	jsonData, err = FileContentsNormalizer(configFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	documentLoader := gojsonschema.NewBytesLoader(jsonData)
+	// XXX allow reference loader to use URLs as well as local files
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaFile)
 	validated, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	exception := NewExceptionDetail()
 
 	result := NewResult()
 	result.Config = (configFile)
@@ -128,14 +183,23 @@ func JSONDataRespValidate(schemaFile, configFile string) (jsonOutput []byte, err
 
 	if err != nil {
 		//s.Dump(err)
-		result.Exception = append(result.Exception, err.Error())
+
+		exception.ErrorString = err.Error()
+		// see https://github.com/xeipuuv/gojsonschema/issues/160
+		exception.Path = "a general exception occurred; probably an invalid schema; see https://github.com/xeipuuv/gojsonschema/issues/160"
+
+		result.Exceptions = append(result.Exceptions, exception)
 	} else {
 		if validated.Valid() {
 			result.IsValid = true
 		} else {
 			for _, desc := range validated.Errors() {
-				e := errors.New(desc.String())
-				result.Exception = append(result.Exception, e.Error())
+				exception := NewExceptionDetail()
+
+				exception.ErrorString = desc.String()
+				exception.Path = desc.Context().String()
+
+				result.Exceptions = append(result.Exceptions, exception)
 			}
 		}
 	}
@@ -148,6 +212,7 @@ func JSONDataRespValidate(schemaFile, configFile string) (jsonOutput []byte, err
 func JSONStrRespValidate(schemaFile, configFile string) (jsonOutput string, err error) {
 	jsonResponse, err := Validate(schemaFile, configFile)
 	result := NewResult()
+	exception := NewExceptionDetail()
 	result.Config = (configFile)
 	result.Schema = (schemaFile)
 	result.IsValid = false
@@ -156,7 +221,10 @@ func JSONStrRespValidate(schemaFile, configFile string) (jsonOutput string, err 
 		return string(jsonResponse), err
 	}
 
-	result.Exception = append(result.Exception, err.Error())
+	exception.ErrorString = err.Error()
+	exception.Path = "Not Reported"
+
+	result.Exceptions = append(result.Exceptions, exception)
 	errResult, err := json.Marshal(result)
 
 	return string(errResult), err

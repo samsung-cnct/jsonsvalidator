@@ -206,7 +206,7 @@ fi
 #
 
 #  Make settable via args/env vars
-GOLANG_CONTAINER=${GOLANG_CONTAINER:-"quay.io/samsung_cnct/goglide:0.1.8"}
+#GOLANG_CONTAINER=${GOLANG_CONTAINER:-"quay.io/samsung_cnct/goglide:0.1.8"}
 
 function gexample::build::interactive {
     gexample::build::info "Running Interactive ${GOLANG_CONTAINER}"
@@ -239,8 +239,8 @@ function gexample::build::make {
             which make;\
             whoami; \
             make --version;\
+	    curl https://glide.sh/get | sh; \
         make --file ${MAKEFILE_NAME} ${MAKE_ARGS};"
-     exit
 }
 
 function gexample::build::container {

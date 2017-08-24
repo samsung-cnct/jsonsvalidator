@@ -16,7 +16,6 @@ package jsv
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -54,20 +53,6 @@ type (
 	}
 )
 
-func confFiles(schema, config string) (string, string) {
-	if _, err := FileExists(schema); err != nil {
-		fmt.Println(err.Error())
-		return "", ""
-	}
-
-	if _, err := FileExists(config); err != nil {
-		fmt.Println(err.Error())
-		return "", ""
-	}
-
-	return schema, config
-}
-
 func TestTablesUsingYAML(t *testing.T) {
 	var config YAMLConf
 
@@ -101,10 +86,10 @@ func TestTablesUsingYAML(t *testing.T) {
 		schema := filepath.Join(cwd, schemaTestsDir, thisTest.Schema)
 
 		// Configs do not
-		config := filepath.Join(configTestsDir, thisTest.Config)
+		config := filepath.Join(cwd, configTestsDir, thisTest.Config)
 
 		// Verify schema and config file for this test run exist
-		testCase.schema, testCase.config = confFiles(schema, config)
+		testCase.schema, testCase.config = schema, config
 
 		// register custom formatters
 		RegisterCustomFormatters()
@@ -112,7 +97,7 @@ func TestTablesUsingYAML(t *testing.T) {
 		// Run validation between schema and config
 		if jsondata, ok := Validate(schema, config); ok == nil {
 			commonOutStr := "\n\tTest |    %-35s| %-30s\n\tConfig: `%s`\n\tSchema: `%s`.\n\tExpected: %-20v\n\tHad: %v\n"
-			commonOutErr := "\tError(s): `%s`\n\n"
+			commonOutErr := "\tError(s): `%+v`\n\n"
 
 			if err = json.Unmarshal(jsondata, &validated); err != nil {
 				t.Fatalf(err.Error())
@@ -127,7 +112,7 @@ func TestTablesUsingYAML(t *testing.T) {
 			} else {
 				testCase.success = false
 				t.Errorf(commonOutStr+commonOutErr, testCase.name, "FAILED!!", testCase.config,
-					testCase.schema, testCase.expect, testCase.have, validated.Exception)
+					testCase.schema, testCase.expect, testCase.have, validated.Exceptions)
 			}
 		}
 	}
