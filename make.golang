@@ -24,13 +24,13 @@ LDFLAGS=-ldflags "-X jsonsvalidator/cmd.Version=${VERSION} -X jsonsvalidator/cmd
 
 #
 #
-IMAGE_NAME := jsonsvalidator
+IMAGE_NAME := jsv
 
 #
 # avoid checking etc the vendor dir
 #
 ### XXX broken for now. Glide is not found. Likely due to how volume is mounted.
-#NOVENDOR := $(shell glide novendor)
+NOVENDOR := $(shell glide novendor)
 
 PKGS := "./cmd ./jsv"
 
