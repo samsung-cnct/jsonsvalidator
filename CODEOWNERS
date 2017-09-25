@@ -1,5 +1,5 @@
-# Main owner (original author)
-* @notjames, @coffeepac, @davidewatson
+# Lines starting with '#' are comments.
+# Each line is a file pattern followed by one or more owners.
 
-# team ownership
-* @samsung-cnct
+# These owners will be the default owners for everything in the repo.
+*       @samsung-cnct/kraken-reviewers
