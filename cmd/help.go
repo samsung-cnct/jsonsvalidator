@@ -1,4 +1,4 @@
-// Copyright © 2017 Samsung CNCT
+// Copyright © 2016 Samsung CNCT
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,27 +15,17 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
-var runtimeCommandName = os.Args[0]
-
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
-	Use:   runtimeCommandName,
-	SilenceErrors: true,
-	Short: "validate JSON config against the JSON schema validator (spec v4).",
+// helpCmd represents the help command
+var helpCmd = &cobra.Command{
+	Use:   "help [command]",
+	Short: "Help about any command",
+	Long: "Help provides help for any command in the application. Simply type ` + RootCmd.Name() + ` help [path to command] for full details.",
+	Run: RootCmd.HelpFunc(),
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
+func init() {
+	RootCmd.AddCommand(helpCmd)
 }

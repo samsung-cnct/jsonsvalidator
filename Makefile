@@ -16,7 +16,7 @@ DOCKER_IMAGE := jsonsvalidator
 #
 # do some repo evals... want everyone to use their own, unless building for the team
 #
-DEFAULT_REPO := "samsung-bogus"
+DEFAULT_REPO := "quay.io/samsung_cnct"
 
 # will need to be changed to samsung-cnct for prod version
 DOCKER_REPO ?= DEFAULT_REPO
@@ -53,5 +53,5 @@ repo-warning:
 # 
 %::
 	@echo "vars:$(MAKE):$(MAKECMDGOALS):$(MAKEFLAGS):$(ARGLIST)"
-	./build.sh -- $(MAKECMDGOALS) $(MAKEFLAGS) $(ARGLIST)
+	./bin/build.sh -- $(MAKECMDGOALS) $(MAKEFLAGS) $(ARGLIST)
 

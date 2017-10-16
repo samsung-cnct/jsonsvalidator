@@ -1,4 +1,4 @@
-.PHONY: all build-all build-app repo-warning-in clean-app clean vet clean-all lint test-all view-all-coverage
+.PHONY: all build-all build-app repo-warning-in clean vet lint test view-all-coverage
 #
 # This is the Makefile to build the golang components.
 # It is normally run in a docker container for golang builds.
@@ -9,34 +9,25 @@
 # https://hub.docker.com/_/golang/
 #
 # Vars for version and build
-ARCH=amd64
-DIST=$(shell uname | tr [[:upper:]] [[:lower:]])
-
-# Need to work through this more thoroughly
-BUILD=$(shell git rev-parse HEAD)
-VERSION=$(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
+IMAGE_NAME := jsonsvalidator
+PKGS       := "./cmd"
+ARCH       ?= amd64
+DIST       ?= $(shell uname | tr [[:upper:]] [[:lower:]])
+BUILD      := $(shell git rev-parse HEAD)
+VERSION    := $(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
 
 # grab the latest tagged build
-#
-# # -ldflasg to set vars
-# currently hard coded. XXX need to variablizE it for portability
-LDFLAGS=-ldflags "-X jsonsvalidator/cmd.Version=${VERSION} -X jsonsvalidator/cmd.Build=${BUILD}"
+# -ldflasg to set vars
+# currently hard coded. XXX need to variabalize it for portability
+LDFLAGS := "-X  github.com/samsung-cnct/jsonsvalidator/cmd.Version=${VERSION} \
+            -X  github.com/samsung-cnct/jsonsvalidator/cmd.Build=${BUILD}"
 
-#
-#
-IMAGE_NAME := jsv
-
-#
 # avoid checking etc the vendor dir
-#
-### XXX broken for now. Glide is not found. Likely due to how volume is mounted.
-NOVENDOR := $(shell glide novendor)
+NOVENDOR := ./cmd/...
 
-PKGS := "./cmd ./jsv"
 
-#
+
 # find the certs.  use the first location found
-#
 CONTAINER_PATH := ./_containerize
 
 repo-warning-in:
@@ -45,6 +36,8 @@ repo-warning-in:
 	@echo "GOPATH:$(GOPATH)"
 	@echo "GOROOT:$(GOROOT)"
 	@echo "GOBIN:$(GOBIN)"
+	@echo "GOOS:$(DIST)"
+	@echo "ARCH:$(ARCH)"
 	@echo "============================================================="
 	@pwd
 	@ls -l
@@ -52,40 +45,31 @@ repo-warning-in:
 	@ls -l $(GOPATH)
 	@env | sort
 
-all:  test build-all
+all: test build-all
 
-build-all: build-app  build-darwin
+build-all: build-app build-darwin build-linux
 
-#------------------------------------------
 # Target for real container build
-#
 build-app: repo-warning-in vet
-	env CGO_ENABLED=0 GOOS=$(DIST) GOARCH=$(ARCH) go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-${DIST}-${ARCH} main.go
+	env GOOS=$(DIST) GOARCH=$(ARCH) go build -v -ldflags $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-$(DIST)-$(ARCH) main.go
 
-#
-#------------------------------------------
-#
 # for local os-x app run only
-#
 build-darwin: repo-warning-in vet
-	env GOOS=darwin GOARCH=$(ARCH) go build -v $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH) main.go
+	env GOOS=darwin GOARCH=$(ARCH) go build -v -ldflags $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH) main.go
+
+# for local linux app run only
+build-linux: repo-warning-in vet
+	env GOOS=linux GOARCH=$(ARCH) go build -v -ldflags $(LDFLAGS) -o $(GOPATH)/bin/$(IMAGE_NAME)-linux-$(ARCH) main.go
 
 #
 # dev testing
 #
-test: vet lint
-	go test -cover -v $(LDFLAGS) $(NOVENDOR)
+test: repo-warning-in vet lint
+	go test -cover -v -ldflags $(LDFLAGS) $(NOVENDOR)
 
-test-all: test-jsv test-cmd
-
-test-jsv: repo-warning-in vet lint
-	go test -race -v $(LDFLAGS) ./jsv/...
-
-test-cmd: repo-warning-in vet lint
-	go test -race -v $(LDFLAGS) ./cmd/...
 
 cover-runner: repo-warning-in
-	go test -covermode=count -coverprofile=coverage.out ./jsv
+	go test -covermode=count -coverprofile=coverage.out $(NOVENDOR)
 	go tool cover -html=coverage.out -o=coverage.html
 
 view-debug:
@@ -103,26 +87,17 @@ vet:
 	go vet $(NOVENDOR)
 
 doc:
-	godoc ./jsv
 	godoc ./cmd
-	#godoc -http=:6060 -index
 
 lint:
-	go get github.com/golang/lint/golint
-	go get -u honnef.co/go/tools/cmd/...
-	go get -u honnef.co/go/tools/simple
-	# get all deps
-	go get
+	@go get github.com/golang/lint/golint
+	@go get -u honnef.co/go/tools/cmd/...
+	@go get -u honnef.co/go/tools/simple
 	golint $(NOVENDOR)
 	gosimple $(NOVENDOR)
 
-
-clean: clean-all
-
-clean-all: clean-app 
-
-clean-app:
-	-rm $(GOPATH)/bin/$(IMAGE_NAME)
-	-rm $(GOPATH)/bin/$(IMAGE_NAME)-${DIST}-${ARCH}
-	-rm $(GOPATH)/bin/$(IMAGE_NAME)-darwin-${ARCH}
+clean:
+	@-rm $(GOPATH)/bin/$(IMAGE_NAME)-$(DIST)-$(ARCH)
+	@-rm $(GOPATH)/bin/$(IMAGE_NAME)-linux-$(ARCH)
+	@-rm $(GOPATH)/bin/$(IMAGE_NAME)-darwin-$(ARCH)
 

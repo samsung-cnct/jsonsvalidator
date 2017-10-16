@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jsv
+package cmd
 
 import (
 	"fmt"
@@ -21,13 +21,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	// Version variable contains the version of this application
-	Version string
+// Version variable contains the version of this application
+var Version string
 
-	// Build variable contains the build version of this application
-	Build string
-)
+// Build variable contains the build version of this application
+var Build string
 
 // versionCmd represents the version argument which will give
 // the caller of the command the runtime version, build, OS, and Arch
@@ -38,7 +36,7 @@ var versionCmd = &cobra.Command{
 	Long:  `Display the version of this application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Version: ", Version)
-		fmt.Println("Git commit hash: ", Build)
+		fmt.Println("Git-commit-hash: ", Build)
 		fmt.Println("OS: ", runtime.GOOS)
 		fmt.Println("Arch: ", runtime.GOARCH)
 	},

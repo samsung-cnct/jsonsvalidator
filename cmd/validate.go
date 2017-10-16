@@ -12,22 +12,66 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jsv
+package cmd
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
-
-	jsv "jsonsvalidator/jsv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-var (
-	configFile string
-	schemaFile string
-)
+var configFile string
+var schemaFile string
+
+
+// validateCmd represents the validate command
+var validateCmd = &cobra.Command{
+	Use:   "validate",
+	Short: "Set config file to be validated.",
+	Long: "Validate a config (--config) file against a JSON schema (--schema)",
+	Example: "validate  --schema <schema> --config <instance/config file>",
+	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+		if err = CheckRequiredFlags(cmd.Flags()); err != nil {
+			return err
+		}
+
+		if err = RequiredFlagHasArgs("schema", schemaFile); err != nil {
+			return err
+		}
+
+		if err = RequiredFlagHasArgs("config", configFile); err != nil {
+			return err
+		}
+
+		return err
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return doValidate(schemaFile, configFile)
+	},
+}
+
+func init() {
+	RootCmd.AddCommand(validateCmd)
+
+	validateCmd.PersistentFlags().StringVarP(
+		&schemaFile,
+		"schema",
+		"s",
+		"",
+		"schema file to validate against.",
+	)
+
+	validateCmd.PersistentFlags().StringVarP(
+		&configFile,
+		"config",
+		"c",
+		"",
+		"config file to be validated.",
+	)
+}
+
 
 // CheckRequiredFlags enforce Cobra to fail with an error
 // when required CLI args are missing.
@@ -55,7 +99,7 @@ func CheckRequiredFlags(flags *pflag.FlagSet) error {
 	})
 
 	if requiredError {
-		return errors.New("Required flag `" + flagName + "` has not been set")
+		return fmt.Errorf("Required flag `%s` has not been set", flagName)
 	}
 
 	return nil
@@ -67,43 +111,9 @@ func RequiredFlagHasArgs(flag string, arg string) error {
 	match := re.FindStringSubmatch(flag)
 
 	if len(arg) == 0 || len(match) > 0 {
-		return errors.New("flag `" + flag + "` requires argument")
+		return fmt.Errorf("flag `%s` requires an arugment", flag)
 	}
 
 	return nil
 }
 
-// validateCmd represents the validate command
-var validateCmd = &cobra.Command{
-	Use:   "validate",
-	Short: "Set config file to be validated.",
-	Long: `Use the "validate" verb preparatory to specifying the flags used to` +
-		`specify a JSON schema and config, -f and -c.`,
-	Example: "validate  --schema <schema> --config <instance/config file>",
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
-		if err = CheckRequiredFlags(cmd.Flags()); err != nil {
-			return err
-		}
-
-		if err = RequiredFlagHasArgs("schema", schemaFile); err != nil {
-			return err
-		}
-
-		if err = RequiredFlagHasArgs("config", configFile); err != nil {
-			return err
-		}
-
-		return err
-	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		err = jsv.DoValidate(schemaFile, configFile)
-		return err
-	},
-}
-
-func init() {
-	RootCmd.AddCommand(validateCmd)
-
-	validateCmd.PersistentFlags().StringVarP(&schemaFile, "schema", "s", "", "schema file to validate against.")
-	validateCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file to be validated.")
-}
