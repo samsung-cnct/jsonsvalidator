@@ -14,8 +14,10 @@
 
 package main
 
-import jsv "jsonsvalidator/cmd"
+import (
+	"github.com/samsung-cnct/jsonsvalidator/cmd"
+)
 
 func main() {
-	jsv.Execute()
+	cmd.Execute()
 }

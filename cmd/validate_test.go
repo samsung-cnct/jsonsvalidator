@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jsv
+package cmd
 
 import (
 	"encoding/json"
@@ -21,58 +21,50 @@ import (
 	"path/filepath"
 	"testing"
 
-	y "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
-var testYAML = "./tests.yaml"
-var schemaTestsDir string
-var configTestsDir string
+var testYAML = "../tests.yaml"
 
-type (
-	testCase struct {
+type testCase struct {
 		name       string
 		schema     string
 		config     string
-		jsonstring string
+		jsonString string
 		success    bool
 		have       string
 		expect     string
-	}
+}
 
-	YAMLConf struct {
+type YAMLConf struct {
 		ConfigsDir string  `yaml:"configs_dir"`
 		SchemasDir string  `yaml:"schemas_dir"`
 		Tests      []Tests `yaml:"tests"`
-	}
+}
 
-	Tests struct {
+type Tests struct {
 		Name   string `yaml:"name"`
 		Schema string `yaml:"schema"`
 		Config string `yaml:"config"`
 		Expect string `yaml:"expect"`
-	}
-)
+}
 
 func TestTablesUsingYAML(t *testing.T) {
 	var config YAMLConf
 
-	myYAML, _ := ioutil.ReadFile(testYAML)
-	err := y.Unmarshal(myYAML, &config)
+	testYamlFile, _ := ioutil.ReadFile(testYAML)
+	err := yaml.Unmarshal(testYamlFile, &config)
 
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 
-	schemaTestsDir = config.SchemasDir
-	configTestsDir = config.ConfigsDir
-	testsToRun := config.Tests
-
 	SuccessMap := map[string]bool{"success": true, "fail": false}
 	SuccessMapRev := map[bool]string{true: "success", false: "fail"}
 
-	for _, thisTest := range testsToRun {
+	for _, thisTest := range config.Tests {
 		var testCase testCase
-		var validated Result
+		var validated ValidatorResult
 
 		// And the name is
 		testCase.name = thisTest.Name
@@ -81,39 +73,48 @@ func TestTablesUsingYAML(t *testing.T) {
 		testCase.expect = thisTest.Expect
 
 		cwd, err := os.Getwd()
+		if err != nil {
+			t.Error("could not get working directory: ", err)
+		}
+
 
 		// Schemas require absolute path
-		schema := filepath.Join(cwd, schemaTestsDir, thisTest.Schema)
+		schema := filepath.Join(cwd, config.SchemasDir, thisTest.Schema)
 
 		// Configs do not
-		config := filepath.Join(cwd, configTestsDir, thisTest.Config)
+		config := filepath.Join(cwd, config.ConfigsDir, thisTest.Config)
 
 		// Verify schema and config file for this test run exist
 		testCase.schema, testCase.config = schema, config
 
 		// register custom formatters
-		RegisterCustomFormatters()
+		registerCustomFormatters()
 
 		// Run validation between schema and config
-		if jsondata, ok := Validate(schema, config); ok == nil {
-			commonOutStr := "\n\tTest |    %-35s| %-30s\n\tConfig: `%s`\n\tSchema: `%s`.\n\tExpected: %-20v\n\tHad: %v\n"
-			commonOutErr := "\tError(s): `%+v`\n\n"
+		jsondata, err := validate(schema, config);
 
-			if err = json.Unmarshal(jsondata, &validated); err != nil {
-				t.Fatalf(err.Error())
-			}
-
-			testCase.have = SuccessMapRev[validated.IsValid]
-
-			if validated.IsValid == SuccessMap[thisTest.Expect] {
-				testCase.success = true
-				t.Logf(commonOutStr+"\n", testCase.name, "SUCCEEDED", testCase.config,
-					testCase.schema, testCase.expect, testCase.have)
-			} else {
-				testCase.success = false
-				t.Errorf(commonOutStr+commonOutErr, testCase.name, "FAILED!!", testCase.config,
-					testCase.schema, testCase.expect, testCase.have, validated.Exceptions)
-			}
+		if err != nil {
+			t.Error("validating failed: ", err)
 		}
+
+		commonOutStr := "\n\tTest |    %-35s| %-30s\n\tConfig: `%s`\n\tSchema: `%s`.\n\tExpected: %-20v\n\tHad: %v\n"
+		commonOutErr := "\tError(s): `%+v`\n\n"
+
+		if err = json.Unmarshal(jsondata, &validated); err != nil {
+			t.Fatalf(err.Error())
+		}
+
+		testCase.have = SuccessMapRev[validated.IsValid]
+
+		if validated.IsValid == SuccessMap[thisTest.Expect] {
+			testCase.success = true
+			t.Logf(commonOutStr+"\n", testCase.name, "SUCCEEDED", testCase.config,
+				testCase.schema, testCase.expect, testCase.have)
+		} else {
+			testCase.success = false
+			t.Errorf(commonOutStr+commonOutErr, testCase.name, "FAILED!!", testCase.config,
+				testCase.schema, testCase.expect, testCase.have, validated.Exceptions)
+		}
+
 	}
 }
