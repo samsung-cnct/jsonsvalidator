@@ -66,3 +66,18 @@ tests:
     schema: "config.json"
     expect: "fail"
     name: "uri - invalid representation 3"
+
+  - config: "aws_node_config_valid.yaml"
+    schema: "awsNodeConfig.json"
+    expect: "success"
+    name: "uri - invalid representation 3"
+
+  - config: "aws_node_config_invalid_1.yaml"
+    schema: "awsNodeConfig.json"
+    expect: "fail"
+    name: "uri - invalid representation 3"
+
+  - config: "aws_node_config_invalid_2.yaml"
+    schema: "awsNodeConfig.json"
+    expect: "fail"
+    name: "uri - invalid representation 3"
